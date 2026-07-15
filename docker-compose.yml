@@ -1,18 +1,5 @@
-# Meridian AI — Full Stack with Real DataHub
-#
-# Quick Start (no Docker):
-#   pip install -e . && meridian investigate "urn:li:mlModel:(urn:li:dataPlatform:mlflow,churn_model_v3,PROD)"
-#
-# Full Stack with DataHub:
-#   1. Start Docker Desktop
-#   2. docker compose up -d
-#   3. Wait ~90s for DataHub to initialize
-#   4. python scripts/seed_meridian.py
-#   5. Visit http://localhost:9002 (DataHub UI) — login: datahub / datahub
-#   6. Visit http://localhost:8000/docs (Meridian API)
-#
-# DataHub services: MySQL, Kafka, Zookeeper, Elasticsearch, GMS, Frontend, Actions
-# Meridian services: backend-api, frontend
+# Meridian AI — DataHub Integration
+# Minimal configuration based on DataHub quickstart
 
 services:
   # ── DataHub Infrastructure ──────────────────────────────────────────────
@@ -34,11 +21,6 @@ services:
       timeout: 5s
       retries: 10
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: "1.0"
 
   kafka:
     image: confluentinc/cp-kafka:7.4.0
@@ -57,11 +39,6 @@ services:
       zookeeper:
         condition: service_started
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: "1.0"
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
@@ -71,16 +48,12 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     healthcheck:
-      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD-SHELL", "echo ruok | nc -w 2 localhost 2181 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: "0.5"
 
   elasticsearch:
     image: elasticsearch:7.17.9
@@ -98,11 +71,6 @@ services:
       timeout: 5s
       retries: 10
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 1536M
-          cpus: "1.0"
 
   # ── DataHub Services ────────────────────────────────────────────────────
 
@@ -114,7 +82,6 @@ services:
       - DATAHUB_SECRET=gms-secret-key
       - DATAHUB_APP_PORT=8080
       - KAFKA_BOOTSTRAP_SERVER=kafka:29092
-      - KAFKA_SCHEMAREGISTRY_URL=http://kafka:8081
       - ELASTICSEARCH_HOST=elasticsearch
       - ELASTICSEARCH_PORT=9200
       - MYSQL_HOST=mysql
@@ -132,16 +99,11 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
-      interval: 15s
+      interval: 30s
       timeout: 10s
-      retries: 10
-      start_period: 60s
+      retries: 30
+      start_period: 240s
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: "1.0"
 
   datahub-frontend:
     image: acryldata/datahub-frontend-react:v0.14.0
@@ -158,11 +120,6 @@ services:
       datahub-gms:
         condition: service_healthy
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: "0.5"
 
   # ── Meridian AI Services ────────────────────────────────────────────────
 
@@ -189,11 +146,6 @@ services:
       retries: 5
       start_period: 10s
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 1024M
-          cpus: "1.0"
 
   frontend:
     build:
@@ -209,11 +161,6 @@ services:
       backend-api:
         condition: service_started
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: "0.5"
 
 volumes:
   mysql-data:
