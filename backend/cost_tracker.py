@@ -75,7 +75,8 @@ class InvestigationCost:
         """Calculate ROI as percentage."""
         if self.total_cost_usd <= 0:
             return 0.0
-        value_of_time_saved = self.time_saved_minutes * 1.41  # Revenue per prediction minute
+        from backend.stats import REVENUE_PER_PREDICTION
+        value_of_time_saved = self.time_saved_minutes * REVENUE_PER_PREDICTION
         if value_of_time_saved <= 0:
             return 0.0
         return round(((value_of_time_saved - self.total_cost_usd) / self.total_cost_usd) * 100, 2)

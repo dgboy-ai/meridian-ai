@@ -190,7 +190,7 @@ class DataSentinel:
                 ),
             ],
             business_impact=BusinessImpact(
-                predictions_today=32000,
+                predictions_today=blast_radius.get("predictions_at_risk", 0),
                 estimated_revenue_at_risk=f"${blast_radius['revenue_at_risk_daily']:,}/day",
                 affected_systems=lineage_traversal.affected_models + lineage_traversal.affected_datasets,
             ),
