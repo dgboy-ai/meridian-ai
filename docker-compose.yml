@@ -20,7 +20,7 @@ services:
   mysql:
     image: mysql:8.0
     ports:
-      - "3306:3306"
+      - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: datahub
@@ -55,7 +55,7 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
     depends_on:
       zookeeper:
-        condition: service_healthy
+        condition: service_started
     restart: unless-stopped
     deploy:
       resources:
