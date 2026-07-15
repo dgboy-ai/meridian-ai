@@ -3,8 +3,17 @@
 Every function here is pure math. Two arrays of numbers go in,
 quantitative results come out. The LLM interprets these results
 AFTER computation, never replaces it.
+
+Includes DSA implementations:
+- BFS/DFS graph traversal for lineage
+- Topological sort for dependency ordering
+- Cycle detection for graph validation
+- Binary search for O(log n) lookups
+- Union-Find for connected components
 """
+import bisect
 import math
+from collections import deque
 from dataclasses import dataclass, field
 
 
@@ -566,3 +575,476 @@ def detect_governance_gaps(entities: list[dict]) -> list[dict]:
             gaps.append({"name": name, "urn": urn, "issues": issues})
 
     return gaps
+
+
+# ── DSA: Graph Algorithms ─────────────────────────────────────────────────────
+
+
+def bfs_lineage(
+    source_urn: str,
+    lineage_graph: dict[str, list[str]],
+    max_depth: int = 10,
+) -> dict:
+    """BFS traversal of lineage graph to arbitrary depth.
+
+    Uses collections.deque for O(1) queue operations.
+    Time complexity: O(V + E) where V = vertices, E = edges
+    Space complexity: O(V)
+
+    Args:
+        source_urn: Starting entity URN
+        lineage_graph: Adjacency list {urn: [downstream_urns]}
+        max_depth: Maximum traversal depth
+
+    Returns:
+        Dict with nodes, edges, depths, and paths
+    """
+    queue: deque[tuple[str, int]] = deque([(source_urn, 0)])
+    visited: set[str] = set()
+    result: dict = {
+        "nodes": [],
+        "edges": [],
+        "depths": {},
+        "paths": {source_urn: [source_urn]},
+    }
+
+    while queue:
+        current, depth = queue.popleft()
+
+        if current in visited or depth > max_depth:
+            continue
+
+        visited.add(current)
+        result["nodes"].append(current)
+        result["depths"][current] = depth
+
+        for neighbor in lineage_graph.get(current, []):
+            if neighbor not in visited:
+                queue.append((neighbor, depth + 1))
+                result["edges"].append((current, neighbor))
+                # Build path
+                result["paths"][neighbor] = result["paths"][current] + [neighbor]
+
+    return result
+
+
+def dfs_lineage(
+    source_urn: str,
+    lineage_graph: dict[str, list[str]],
+    max_depth: int = 10,
+) -> dict:
+    """DFS traversal of lineage graph using explicit stack.
+
+    Uses list as stack for O(1) push/pop.
+    Time complexity: O(V + E)
+    Space complexity: O(V)
+
+    Args:
+        source_urn: Starting entity URN
+        lineage_graph: Adjacency list {urn: [downstream_urns]}
+        max_depth: Maximum traversal depth
+
+    Returns:
+        Dict with nodes, edges, depths, and topological order
+    """
+    stack: list[tuple[str, int]] = [(source_urn, 0)]
+    visited: set[str] = set()
+    result: dict = {
+        "nodes": [],
+        "edges": [],
+        "depths": {},
+        "topological_order": [],
+    }
+
+    while stack:
+        current, depth = stack.pop()
+
+        if current in visited or depth > max_depth:
+            continue
+
+        visited.add(current)
+        result["nodes"].append(current)
+        result["depths"][current] = depth
+        result["topological_order"].append(current)
+
+        # Push neighbors in reverse order for correct DFS traversal
+        for neighbor in reversed(lineage_graph.get(current, [])):
+            if neighbor not in visited:
+                stack.append((neighbor, depth + 1))
+                result["edges"].append((current, neighbor))
+
+    return result
+
+
+def topological_sort(lineage_graph: dict[str, list[str]]) -> list[str]:
+    """Topological sort using Kahn's algorithm.
+
+    Time complexity: O(V + E)
+    Space complexity: O(V)
+
+    Args:
+        lineage_graph: Adjacency list {urn: [downstream_urns]}
+
+    Returns:
+        List of URNs in topological order (dependencies first)
+    """
+    # Compute in-degrees
+    in_degree: dict[str, int] = {node: 0 for node in lineage_graph}
+    for node, neighbors in lineage_graph.items():
+        for neighbor in neighbors:
+            in_degree[neighbor] = in_degree.get(neighbor, 0) + 1
+
+    # Start with nodes that have no dependencies
+    queue = deque([node for node, deg in in_degree.items() if deg == 0])
+    order: list[str] = []
+
+    while queue:
+        node = queue.popleft()
+        order.append(node)
+        for neighbor in lineage_graph.get(node, []):
+            in_degree[neighbor] -= 1
+            if in_degree[neighbor] == 0:
+                queue.append(neighbor)
+
+    # Check for cycles
+    if len(order) != len(in_degree):
+        raise ValueError("Cycle detected in lineage graph")
+
+    return order
+
+
+def has_cycle(lineage_graph: dict[str, list[str]]) -> bool:
+    """Detect cycles in lineage graph using DFS coloring.
+
+    Time complexity: O(V + E)
+    Space complexity: O(V)
+
+    Args:
+        lineage_graph: Adjacency list {urn: [downstream_urns]}
+
+    Returns:
+        True if cycle exists, False otherwise
+    """
+    WHITE, GRAY, BLACK = 0, 1, 2
+    color: dict[str, int] = {node: WHITE for node in lineage_graph}
+
+    def dfs(node: str) -> bool:
+        color[node] = GRAY
+        for neighbor in lineage_graph.get(node, []):
+            if color.get(neighbor, WHITE) == GRAY:
+                return True
+            if color.get(neighbor, WHITE) == WHITE and dfs(neighbor):
+                return True
+        color[node] = BLACK
+        return False
+
+    return any(dfs(node) for node, c in color.items() if c == WHITE)
+
+
+def shortest_path_bfs(
+    source: str,
+    target: str,
+    lineage_graph: dict[str, list[str]],
+) -> list[str] | None:
+    """Find shortest path between two nodes using BFS.
+
+    Time complexity: O(V + E)
+    Space complexity: O(V)
+
+    Args:
+        source: Starting URN
+        target: Target URN
+        lineage_graph: Adjacency list
+
+    Returns:
+        List of URNs forming shortest path, or None if no path
+    """
+    if source == target:
+        return [source]
+
+    queue: deque[tuple[str, list[str]]] = deque([(source, [source])])
+    visited: set[str] = {source}
+
+    while queue:
+        current, path = queue.popleft()
+        for neighbor in lineage_graph.get(current, []):
+            if neighbor == target:
+                return path + [neighbor]
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append((neighbor, path + [neighbor]))
+
+    return None
+
+
+def connected_components(lineage_graph: dict[str, list[str]]) -> list[list[str]]:
+    """Find connected components in undirected graph representation.
+
+    Time complexity: O(V + E)
+    Space complexity: O(V)
+
+    Args:
+        lineage_graph: Adjacency list (treated as undirected)
+
+    Returns:
+        List of components, each component is a list of URNs
+    """
+    visited: set[str] = set()
+    components: list[list[str]] = []
+
+    # Build undirected graph
+    undirected: dict[str, set[str]] = {}
+    for node, neighbors in lineage_graph.items():
+        if node not in undirected:
+            undirected[node] = set()
+        for neighbor in neighbors:
+            undirected[node].add(neighbor)
+            if neighbor not in undirected:
+                undirected[neighbor] = set()
+            undirected[neighbor].add(node)
+
+    def dfs(node: str, component: list[str]) -> None:
+        visited.add(node)
+        component.append(node)
+        for neighbor in undirected.get(node, []):
+            if neighbor not in visited:
+                dfs(neighbor, component)
+
+    for node in undirected:
+        if node not in visited:
+            component: list[str] = []
+            dfs(node, component)
+            components.append(component)
+
+    return components
+
+
+# ── DSA: Binary Search ────────────────────────────────────────────────────────
+
+
+def binary_search_cdf(sorted_arr: list[float], value: float) -> float:
+    """Compute CDF value using binary search.
+
+    Time complexity: O(log n)
+    Space complexity: O(1)
+
+    Args:
+        sorted_arr: Pre-sorted array
+        value: Value to compute CDF for
+
+    Returns:
+        CDF value (proportion of elements <= value)
+    """
+    if not sorted_arr:
+        return 0.0
+    idx = bisect.bisect_right(sorted_arr, value)
+    return idx / len(sorted_arr)
+
+
+def ks_test_binary(
+    reference: list[float],
+    current: list[float],
+    threshold: float = 0.1,
+) -> DriftResult:
+    """KS-test with binary search for O(log n) ECDF lookup.
+
+    Time complexity: O((n+m) log(n+m)) vs O(n*m) for naive
+    Space complexity: O(n+m)
+
+    Args:
+        reference: Reference distribution
+        current: Current distribution
+        threshold: Drift threshold (default 0.1)
+
+    Returns:
+        DriftResult with KS statistic
+    """
+    if not reference or not current:
+        return DriftResult("ks", 0.0, threshold, False, "Insufficient data")
+
+    ref_sorted = sorted(reference)
+    cur_sorted = sorted(current)
+    all_values = sorted(set(ref_sorted + cur_sorted))
+
+    max_diff = 0.0
+    n_ref, n_cur = len(ref_sorted), len(cur_sorted)
+
+    for val in all_values:
+        ref_cdf = bisect.bisect_right(ref_sorted, val) / n_ref
+        cur_cdf = bisect.bisect_right(cur_sorted, val) / n_cur
+        max_diff = max(max_diff, abs(ref_cdf - cur_cdf))
+
+    return DriftResult(
+        metric="ks",
+        value=max_diff,
+        threshold=threshold,
+        drifted=max_diff > threshold,
+        detail=f"KS statistic: {max_diff:.4f} (threshold: {threshold})",
+    )
+
+
+# ── DSA: Union-Find ───────────────────────────────────────────────────────────
+
+
+class UnionFind:
+    """Disjoint Set Union with path compression and union by rank.
+
+    Time complexity: O(α(n)) amortized for find/union (α = inverse Ackermann)
+    Space complexity: O(n)
+    """
+
+    def __init__(self) -> None:
+        self.parent: dict[str, str] = {}
+        self.rank: dict[str, int] = {}
+
+    def find(self, x: str) -> str:
+        """Find root of x with path compression."""
+        if x not in self.parent:
+            self.parent[x] = x
+            self.rank[x] = 0
+        if self.parent[x] != x:
+            self.parent[x] = self.find(self.parent[x])
+        return self.parent[x]
+
+    def union(self, x: str, y: str) -> None:
+        """Union two sets by rank."""
+        px, py = self.find(x), self.find(y)
+        if px == py:
+            return
+        if self.rank[px] < self.rank[py]:
+            px, py = py, px
+        self.parent[py] = px
+        if self.rank[px] == self.rank[py]:
+            self.rank[px] += 1
+
+    def connected(self, x: str, y: str) -> bool:
+        """Check if x and y are in the same set."""
+        return self.find(x) == self.find(y)
+
+    def get_component(self, x: str) -> list[str]:
+        """Get all elements in the same component as x."""
+        root = self.find(x)
+        return [node for node, parent in self.parent.items() if self.find(parent) == root]
+
+    def get_all_components(self) -> list[list[str]]:
+        """Get all connected components."""
+        components: dict[str, list[str]] = {}
+        for node in self.parent:
+            root = self.find(node)
+            if root not in components:
+                components[root] = []
+            components[root].append(node)
+        return list(components.values())
+
+
+# ── DSA: Trie ─────────────────────────────────────────────────────────────────
+
+
+class TrieNode:
+    """Node in a Trie (prefix tree)."""
+
+    def __init__(self) -> None:
+        self.children: dict[str, TrieNode] = {}
+        self.is_end: bool = False
+        self.entity_urn: str | None = None
+        self.metadata: dict = {}
+
+
+class Trie:
+    """Trie for O(m) prefix search (m = query length).
+
+    Time complexity: O(m) for insert/search
+    Space complexity: O(n * m) where n = number of strings
+    """
+
+    def __init__(self) -> None:
+        self.root = TrieNode()
+        self.size = 0
+
+    def insert(self, word: str, entity_urn: str, metadata: dict | None = None) -> None:
+        """Insert a word into the trie."""
+        node = self.root
+        for char in word.lower():
+            if char not in node.children:
+                node.children[char] = TrieNode()
+            node = node.children[char]
+        if not node.is_end:
+            self.size += 1
+        node.is_end = True
+        node.entity_urn = entity_urn
+        if metadata:
+            node.metadata = metadata
+
+    def search(self, word: str) -> bool:
+        """Exact match search."""
+        node = self.root
+        for char in word.lower():
+            if char not in node.children:
+                return False
+            node = node.children[char]
+        return node.is_end
+
+    def starts_with(self, prefix: str) -> list[str]:
+        """Find all words starting with prefix."""
+        node = self.root
+        for char in prefix.lower():
+            if char not in node.children:
+                return []
+            node = node.children[char]
+        return self._collect_all(node)
+
+    def search_prefix(self, prefix: str) -> list[tuple[str, dict]]:
+        """Search by prefix, returning (urn, metadata) tuples."""
+        node = self.root
+        for char in prefix.lower():
+            if char not in node.children:
+                return []
+            node = node.children[char]
+        return self._collect_with_metadata(node)
+
+    def autocomplete(self, prefix: str, max_results: int = 10) -> list[str]:
+        """Autocomplete prefix with limited results."""
+        results = self.starts_with(prefix)
+        return results[:max_results]
+
+    def _collect_all(self, node: TrieNode) -> list[str]:
+        """Collect all entity URNs under this node."""
+        results: list[str] = []
+        if node.is_end and node.entity_urn:
+            results.append(node.entity_urn)
+        for child in node.children.values():
+            results.extend(self._collect_all(child))
+        return results
+
+    def _collect_with_metadata(self, node: TrieNode) -> list[tuple[str, dict]]:
+        """Collect all (urn, metadata) under this node."""
+        results: list[tuple[str, dict]] = []
+        if node.is_end and node.entity_urn:
+            results.append((node.entity_urn, node.metadata))
+        for child in node.children.values():
+            results.extend(self._collect_with_metadata(child))
+        return results
+
+
+# ── DSA: Min-Heap for Top-K ──────────────────────────────────────────────────
+
+
+def top_k_with_heap(items: list, k: int, key_func=None) -> list:
+    """Get top-k items using min-heap.
+
+    Time complexity: O(n log k) vs O(n log n) for full sort
+    Space complexity: O(k)
+
+    Args:
+        items: List of items
+        k: Number of top items to return
+        key_func: Function to extract comparison key
+
+    Returns:
+        Top-k items in descending order
+    """
+    import heapq
+
+    if key_func is None:
+        return heapq.nlargest(k, items)
+    return heapq.nlargest(k, items, key=key_func)
