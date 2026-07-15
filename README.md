@@ -7,10 +7,10 @@ And the next one takes 3.
 
 [![Cost: $0](https://img.shields.io/badge/Cost-$0-brightgreen)](#)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue)](#)
-[![DataHub Tools: 12](https://img.shields.io/badge/DataHub%20Tools-12-purple)](#)
+[![DataHub Tools: 9](https://img.shields.io/badge/DataHub%20Tools-9-purple)](#)
 [![Workers: 21](https://img.shields.io/badge/Workers-21-orange)](#)
-[![Tests: 359](https://img.shields.io/badge/Tests-359-green)](#)
-[![Features: 29](https://img.shields.io/badge/Features-29-blue)](#)
+[![Tests: 548](https://img.shields.io/badge/Tests-548-green)](#)
+[![DSA: 11](https://img.shields.io/badge/DSA%20Algorithms-11-blue)](#)
 
 ## What is Meridian AI?
 
@@ -311,6 +311,46 @@ python scripts/regenerate_examples.py
 - `backend/stats.py` — real PSI/KS-test computation
 - `backend/workers/eu_ai_act_compliance.py` — SHA-256 audit chain
 - `backend/autonomy.py` — 5-level progressive autonomy
+
+## DataHub Integration (9 Tools)
+
+### Read Operations
+| Tool | Purpose | Used By |
+|------|---------|---------|
+| `search` | Find entities by query | DataSentinel, RootCause |
+| `get_entities` | Fetch entity metadata | All workers |
+| `get_lineage` | Traverse upstream/downstream | RootCause, PipelineCircuitBreaker |
+| `list_schema_fields` | Get column metadata | DataSentinel, FeatureDrift |
+| `search_documents` | Find past playbooks | ReflexionLoop |
+
+### Write Operations (5 artifacts per investigation)
+| Tool | Purpose | Used By |
+|------|---------|---------|
+| `save_document` | Persist root cause reports, playbooks | KnowledgeWriter, ReflexionLoop |
+| `add_structured_properties` | Update AI Knowledge panel | KnowledgeWriter, DataSentinel |
+| `raise_incident` | Create incidents | KnowledgeWriter, DataSentinel |
+| `batch_add_tags` | Tag affected assets | KnowledgeWriter, ContractEnforcer |
+
+### Dual-Mode Client
+- **Mock mode**: Instant startup, no DataHub required (default)
+- **Real mode**: Auto-detects DataHub GMS, uses async httpx
+- **Switch**: `export DATAHUB_MOCK=false && export DATAHUB_GMS_URL=http://localhost:8080/api/gms`
+
+## DSA Algorithms (11 Implemented)
+
+| Algorithm | Complexity | Purpose |
+|-----------|------------|---------|
+| BFS Lineage | O(V+E) | Multi-hop lineage traversal |
+| DFS Lineage | O(V+E) | Deep graph exploration |
+| Topological Sort | O(V+E) | Pipeline dependency ordering |
+| Cycle Detection | O(V+E) | Graph validation |
+| Shortest Path | O(V+E) | Fastest propagation path |
+| Connected Components | O(V+E) | Lineage grouping |
+| Binary Search CDF | O(log n) | Fast CDF lookup |
+| KS-Test Binary | O((n+m)log(n+m)) | Drift detection |
+| Union-Find | O(α(n)) | Connectivity queries |
+| Trie | O(m) | Entity prefix search |
+| Min-Heap Top-K | O(n log k) | Fast top-k selection |
 
 ## License
 
