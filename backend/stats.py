@@ -731,14 +731,16 @@ def has_cycle(lineage_graph: dict[str, list[str]]) -> bool:
     def dfs(node: str) -> bool:
         color[node] = GRAY
         for neighbor in lineage_graph.get(node, []):
-            if color.get(neighbor, WHITE) == GRAY:
+            if neighbor not in color:
+                color[neighbor] = WHITE
+            if color[neighbor] == GRAY:
                 return True
-            if color.get(neighbor, WHITE) == WHITE and dfs(neighbor):
+            if color[neighbor] == WHITE and dfs(neighbor):
                 return True
         color[node] = BLACK
         return False
 
-    return any(dfs(node) for node, c in color.items() if c == WHITE)
+    return any(dfs(node) for node in list(color.keys()) if color[node] == WHITE)
 
 
 def shortest_path_bfs(
