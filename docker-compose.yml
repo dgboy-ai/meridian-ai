@@ -75,7 +75,9 @@ services:
   # ── DataHub Services ────────────────────────────────────────────────────
 
   datahub-gms:
-    image: acryldata/datahub-gms:v0.14.0
+    build:
+      context: ./config
+      dockerfile: Dockerfile.datahub-gms
     ports:
       - "8080:8080"
     environment:
@@ -89,7 +91,12 @@ services:
       - MYSQL_USERNAME=datahub
       - MYSQL_PASSWORD=datahub
       - DATAHUB_ANALYTICS_ENABLED=false
-      - JAVA_OPTS=-Xms512m -Xmx512m
+      - JAVA_OPTS=-Xms512m -Xmx512m -Dspring.datasource.url=jdbc:mysql://mysql:3306/datahub?useSSL=false -Dspring.datasource.username=datahub -Dspring.datasource.password=datahub -Debean.datasources.gms.url=jdbc:mysql://mysql:3306/datahub?useSSL=false -Debean.datasources.gms.username=datahub -Debean.datasources.gms.password=datahub
+      - EBEAN_DATASOURCE_HOST=mysql:3306
+      - ENTITY_SERVICE_IMPL=ebean
+      - GRAPH_SERVICE_IMPL=elasticsearch
+      - SKIP_NEO4J_CHECK=true
+      - SKIP_CASSANDRA_CHECK=true
     depends_on:
       mysql:
         condition: service_healthy

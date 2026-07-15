@@ -1,0 +1,15 @@
+FROM acryldata/datahub-gms:v0.14.0
+
+USER root
+
+# Create custom application configuration
+RUN echo 'ebean:' > /datahub/datahub-gms/resources/application.yaml && \
+    echo '  datasources:' >> /datahub/datahub-gms/resources/application.yaml && \
+    echo '    gms:' >> /datahub/datahub-gms/resources/application.yaml && \
+    echo '      url: jdbc:mysql://mysql:3306/datahub?useSSL=false&serverTimezone=UTC' >> /datahub/datahub-gms/resources/application.yaml && \
+    echo '      username: datahub' >> /datahub/datahub-gms/resources/application.yaml && \
+    echo '      password: datahub' >> /datahub/datahub-gms/resources/application.yaml && \
+    echo '      driverClassName: org.mariadb.jdbc.Driver' >> /datahub/datahub-gms/resources/application.yaml && \
+    chown datahub:datahub /datahub/datahub-gms/resources/application.yaml
+
+USER datahub

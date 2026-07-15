@@ -1,0 +1,8 @@
+# DataHub GMS Configuration
+ebean:
+  datasources:
+    gms:
+      url: jdbc:mysql://mysql:3306/datahub?useSSL=false&serverTimezone=UTC
+      username: datahub
+      password: datahub
+      driverClassName: org.mariadb.jdbc.Driver
