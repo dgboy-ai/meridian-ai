@@ -1,0 +1,49 @@
+{
+  "flywheel_proof": "Each incident resolves faster because the knowledge base learns.",
+  "incidents": [
+    {
+      "id": "12",
+      "duration_minutes": 18.0,
+      "date": "2026-03-10",
+      "pattern": "schema-change-type-mismatch"
+    },
+    {
+      "id": "28",
+      "duration_minutes": 8.0,
+      "date": "2026-05-15",
+      "pattern": "freshness-violation"
+    },
+    {
+      "id": "42",
+      "duration_minutes": 8.2,
+      "date": "2026-07-12",
+      "pattern": "schema-change-type-mismatch"
+    }
+  ],
+  "trend": {
+    "schema-change-type-mismatch": {
+      "occurrences": 2,
+      "resolution_times": [
+        18.0,
+        8.2
+      ],
+      "average": 13.1,
+      "improvement": "18.0min -> 8.2min"
+    },
+    "freshness-violation": {
+      "occurrences": 1,
+      "resolution_times": [
+        8.0
+      ],
+      "average": 8.0,
+      "improvement": "Stable at 8.0min"
+    }
+  },
+  "cumulative_intelligence": {
+    "total_incidents": 3,
+    "total_patterns": 2,
+    "average_resolution_time": 11.4,
+    "first_incident_resolution": 18.0,
+    "latest_incident_resolution": 8.2
+  }
+}

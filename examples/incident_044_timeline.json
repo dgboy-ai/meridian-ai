@@ -1,0 +1,38 @@
+{
+  "incident_id": "44",
+  "title": "Schema Change in raw_events — age_bucket Type Mismatch",
+  "severity": "HIGH",
+  "status": "RESOLVED",
+  "detected": "2026-07-13T14:31:12Z",
+  "resolved": "2026-07-13T14:34:12Z",
+  "duration_seconds": 180,
+  "resolution_time_minutes": 3,
+  "root_cause": "Column type change in raw_events.age (INT → STRING) broke age_bucket feature transformation. Pattern matched incident #12 playbook instantly.",
+  "pattern_id": "schema-change-type-mismatch",
+  "affected_models": ["churn_model_v3", "ltv_model_v2", "segment_model_v1"],
+  "health_score": 81,
+  "resolved_incidents": 16,
+  "known_failure_patterns": 3,
+  "timeline": [
+    {"time": "14:31:12", "step": "planner", "status": "started", "finding": "Investigation initiated for incident #44", "confidence": 1.0},
+    {"time": "14:31:13", "step": "data_sentinel", "status": "completed", "finding": "SCHEMA CHANGE DETECTED: raw_events — 1 type changes. Type changes: user_age: INT→STRING", "confidence": 0.95, "severity": "high"},
+    {"time": "14:31:14", "step": "feature_drift", "status": "completed", "finding": "FEATURE DRIFT: 1 type mismatch detected. age_bucket: INT→STRING. PSI=0.0, KS=0.0", "confidence": 0.95},
+    {"time": "14:31:15", "step": "training_serving_skew", "status": "completed", "finding": "TRAINING-SERVING SKEW in churn_model_v3: 1 type mismatch. age_bucket: INT→STRING. Skew score: 0.25. Distribution drift: event_frequency PSI=0.82, session_duration PSI=0.91", "confidence": 0.90, "severity": "high"},
+    {"time": "14:31:16", "step": "data_leakage", "status": "completed", "finding": "No temporal data leakage detected", "confidence": 0.95},
+    {"time": "14:31:18", "step": "root_cause", "status": "completed", "finding": "ROOT CAUSE: raw_events (dataset) — 3 downstream entities affected. Models: churn_model_v3, ltv_model_v2, segment_model_v1. Revenue at risk: $45,120/day.", "confidence": 0.96},
+    {"time": "14:31:20", "step": "validation", "status": "completed", "finding": "Deterministic validation PASSED", "confidence": 1.0},
+    {"time": "14:31:22", "step": "knowledge_writer", "status": "completed", "finding": "Knowledge written to DataHub: root cause report, AI Knowledge panel updated on 3 models (health=81, confidence=0.96, resolved=16, patterns=3), playbook updated. Resolution: 3.0min", "confidence": 0.99},
+    {"time": "14:31:24", "step": "reflexion", "status": "completed", "finding": "Resolution time: 8.0min → 3.0min", "confidence": 0.92},
+    {"time": "14:31:26", "step": "lifecycle_governance", "status": "completed", "finding": "Lifecycle change not warranted for ltv_model_v2 — health 62 above threshold", "confidence": 0.95},
+    {"time": "14:31:28", "step": "eu_ai_act_compliance", "status": "completed", "finding": "EU AI Act Technical File generated: 3 audit records, Articles 12/13/14, chain VALID", "confidence": 0.98},
+    {"time": "14:31:30", "step": "shadow_ai_discovery", "status": "completed", "finding": "All 3 models have proper governance. No shadow AI detected.", "confidence": 0.99},
+    {"time": "14:31:32", "step": "contract_enforcer", "status": "completed", "finding": "Contract compliance OK: 1/5 failures within tolerance", "confidence": 0.95},
+    {"time": "14:31:34", "step": "planner", "status": "completed", "finding": "Investigation #44 complete in 3.0min. 12 workers fired.", "confidence": 1.0}
+  ],
+  "writeback": {
+    "root_cause_report": {"title": "Incident #44 — Root Cause Report", "status": "written"},
+    "ai_knowledge_panel": {"entity": "churn_model_v3", "status": "updated", "health_score": 81, "resolved_incidents": 16},
+    "playbook": {"title": "Playbook: Schema Change to Model Degradation", "status": "updated"},
+    "incident_record": {"id": "INC-3", "linked_entities": 3, "status": "raised"}
+  }
+}

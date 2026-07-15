@@ -1,0 +1,52 @@
+{
+  "family": "meridian-ai-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "meridian-backend",
+      "image": "ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/meridian-ai:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "DATAHUB_GMS_URL", "value": "http://datahub-gms:8080/api/gms" },
+        { "name": "LOG_LEVEL", "value": "INFO" },
+        { "name": "ENVIRONMENT", "value": "production" }
+      ],
+      "secrets": [
+        { "name": "GROQ_API_KEY", "valueFrom": "arn:aws:ssm:REGION:ACCOUNT_ID:parameter/meridian/GROQ_API_KEY" },
+        { "name": "DATAHUB_GMS_TOKEN", "valueFrom": "arn:aws:ssm:REGION:ACCOUNT_ID:parameter/meridian/DATAHUB_GMS_TOKEN" }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 15
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/meridian-ai",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs",
+          "awslogs-create-group": "true"
+        }
+      },
+      "linuxParameters": {
+        "initProcessEnabled": true
+      },
+      "readonlyRootFilesystem": false,
+      "user": "root"
+    }
+  ]
+}

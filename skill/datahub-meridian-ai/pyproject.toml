@@ -1,0 +1,22 @@
+[project]
+name = "datahub-meridian-ai"
+version = "1.0.0"
+description = "AI Reliability Engineer for production ML models"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [
+    { name = "Meridian AI" }
+]
+keywords = ["datahub", "ml-observability", "incident-response", "root-cause-analysis"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Libraries",
+]
+
+[project.urls]
+Homepage = "https://github.com/trueboy1123/meridian-ai"
+Repository = "https://github.com/trueboy1123/meridian-ai"
+Issues = "https://github.com/trueboy1123/meridian-ai/issues"

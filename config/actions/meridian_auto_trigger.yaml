@@ -1,0 +1,74 @@
+# Meridian AI — DataHub Actions Framework Auto-Trigger
+#
+# Automatically fires a Meridian investigation when DataHub detects
+# metadata changes that could impact ML model health.
+#
+# Quick Start:
+#   1. docker compose up -d
+#   2. datahub actions -c config/actions/meridian_auto_trigger.yaml
+#   3. Make a schema change in DataHub UI
+#   4. Investigation fires automatically
+#
+# What triggers an investigation:
+#   - Schema changes (column type changes, new/removed columns)
+#   - Ownership changes (model owner changed)
+#   - Tag changes (PII tag added, quality tag removed)
+#   - Assertion failures (quality check failed)
+#
+# DataHub Actions docs: https://docs.datahub.com/docs/actions
+
+name: meridian-auto-investigator
+
+source:
+  type: kafka
+  config:
+    connection:
+      bootstrap: ${KAFKA_BOOTSTRAP_SERVER:-localhost:9092}
+      schema_registry_url: ${SCHEMA_REGISTRY_URL:-http://localhost:8081}
+
+filters:
+  - type: event_type
+    config:
+      filter:
+        MetadataChangeLogEvent_v1:
+          event:
+            - aspectName: schemaMetadata
+            - aspectName: ownership
+            - aspectName: globalTags
+            - aspectName: assertionRunEvent
+        EntityChangeEvent_v1:
+          event:
+            - category: SCHEMA
+            - category: OWNERSHIP
+            - category: TAG
+
+action:
+  type: executor
+  config:
+    executable: python
+    args:
+      - "-c"
+      - |
+        import json, sys, urllib.request
+        event = json.loads(sys.stdin.read())
+        body = {
+            "event_type": event.get("event_type", "unknown"),
+            "entity_urn": event.get("event", {}).get("entityUrn", ""),
+            "aspect": event.get("event", {}).get("aspectName", event.get("event", {}).get("category", "")),
+            "timestamp": str(event.get("event", {}).get("auditStamp", {}).get("time", ""))
+        }
+        req = urllib.request.Request(
+            "http://localhost:8000/api/actions/investigate",
+            data=json.dumps(body).encode(),
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+        try:
+            resp = urllib.request.urlopen(req, timeout=10)
+            print(json.loads(resp.read().decode()))
+        except Exception as e:
+            print(json.dumps({"error": str(e)}))
+
+options:
+  retry_count: 2
+  failure_mode: "CONTINUE"

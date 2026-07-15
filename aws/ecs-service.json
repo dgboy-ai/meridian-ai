@@ -1,0 +1,47 @@
+{
+  "serviceName": "meridian-ai-backend",
+  "cluster": "meridian-ai-production",
+  "taskDefinition": "meridian-ai-backend",
+  "desiredCount": 2,
+  "launchType": "FARGATE",
+  "platformVersion": "LATEST",
+  "networkConfiguration": {
+    "awsvpcConfiguration": {
+      "subnets": ["subnet-PLACEHOLDER_A", "subnet-PLACEHOLDER_B"],
+      "securityGroups": ["sg-PLACEHOLDER"],
+      "assignPublicIp": "DISABLED"
+    }
+  },
+  "loadBalancers": [
+    {
+      "targetGroupArn": "arn:aws:elasticloadbalancing:REGION:ACCOUNT_ID:targetgroup/meridian-ai-tg/PLACEHOLDER",
+      "containerName": "meridian-backend",
+      "containerPort": 8000
+    }
+  ],
+  "healthCheckGracePeriodSeconds": 60,
+  "deploymentConfiguration": {
+    "maximumPercent": 200,
+    "minimumHealthyPercent": 100,
+    "deploymentCircuitBreaker": {
+      "enable": true,
+      "rollback": true
+    },
+    "deploymentController": {
+      "type": "ECS"
+    }
+  },
+  "schedulingStrategy": "REPLICA",
+  "enableExecuteCommand": true,
+  "propagateTags": "SERVICE",
+  "tags": [
+    {
+      "key": "Project",
+      "value": "meridian-ai"
+    },
+    {
+      "key": "Environment",
+      "value": "production"
+    }
+  ]
+}

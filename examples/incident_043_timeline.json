@@ -1,0 +1,38 @@
+{
+  "incident_id": "43",
+  "title": "Feature Pipeline Freshness Violation",
+  "severity": "MEDIUM",
+  "status": "RESOLVED",
+  "detected": "2026-07-13T10:15:00Z",
+  "resolved": "2026-07-13T10:23:00Z",
+  "duration_seconds": 480,
+  "resolution_time_minutes": 8,
+  "root_cause": "Airflow DAG delay caused feature_pipeline to serve stale features to churn_model_v3.",
+  "pattern_id": "freshness-violation",
+  "affected_models": ["churn_model_v3"],
+  "health_score": 78,
+  "resolved_incidents": 15,
+  "known_failure_patterns": 3,
+  "timeline": [
+    {"time": "10:15:00", "step": "planner", "status": "started", "finding": "Investigation initiated for incident #43", "confidence": 1.0},
+    {"time": "10:15:02", "step": "data_sentinel", "status": "completed", "finding": "Freshness violation detected: feature_pipeline stale 4h", "confidence": 0.92, "severity": "medium"},
+    {"time": "10:15:04", "step": "feature_drift", "status": "completed", "finding": "No significant feature drift detected", "confidence": 0.95},
+    {"time": "10:15:06", "step": "training_serving_skew", "status": "completed", "finding": "No training-serving skew detected", "confidence": 0.95},
+    {"time": "10:15:08", "step": "data_leakage", "status": "completed", "finding": "No temporal data leakage detected", "confidence": 0.95},
+    {"time": "10:15:10", "step": "root_cause", "status": "completed", "finding": "ROOT CAUSE: feature_pipeline (dataset) — 1 downstream entity affected. Models: churn_model_v3.", "confidence": 0.93},
+    {"time": "10:15:12", "step": "validation", "status": "completed", "finding": "Deterministic validation PASSED", "confidence": 1.0},
+    {"time": "10:15:14", "step": "knowledge_writer", "status": "completed", "finding": "Knowledge written to DataHub: root cause report, AI Knowledge panel updated on 1 models (health=78, confidence=0.93, resolved=15, patterns=3), playbook updated. Resolution: 8.0min", "confidence": 0.99},
+    {"time": "10:15:16", "step": "reflexion", "status": "completed", "finding": "Resolution time: 18.0min → 8.0min", "confidence": 0.92},
+    {"time": "10:15:18", "step": "lifecycle_governance", "status": "completed", "finding": "Lifecycle change not warranted", "confidence": 0.95},
+    {"time": "10:15:20", "step": "eu_ai_act_compliance", "status": "completed", "finding": "EU AI Act Technical File generated: 3 audit records, Articles 12/13/14, chain VALID", "confidence": 0.98},
+    {"time": "10:15:22", "step": "shadow_ai_discovery", "status": "completed", "finding": "All models have proper governance", "confidence": 0.99},
+    {"time": "10:15:24", "step": "contract_enforcer", "status": "completed", "finding": "Contract compliance OK", "confidence": 0.95},
+    {"time": "10:15:26", "step": "planner", "status": "completed", "finding": "Investigation #43 complete in 8.0min. 12 workers fired.", "confidence": 1.0}
+  ],
+  "writeback": {
+    "root_cause_report": {"title": "Incident #43 — Root Cause Report", "status": "written"},
+    "ai_knowledge_panel": {"entity": "churn_model_v3", "status": "updated", "health_score": 78, "resolved_incidents": 15},
+    "playbook": {"title": "Playbook: Schema Change to Model Degradation", "status": "updated"},
+    "incident_record": {"id": "INC-2", "linked_entities": 1, "status": "raised"}
+  }
+}

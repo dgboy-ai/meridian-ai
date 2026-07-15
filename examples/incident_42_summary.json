@@ -1,0 +1,83 @@
+{
+  "incident_id": "42",
+  "workers_fired": [
+    "data_sentinel",
+    "feature_drift",
+    "training_serving_skew",
+    "data_leakage",
+    "root_cause",
+    "validation",
+    "knowledge_writer",
+    "reflexion",
+    "lifecycle_governance",
+    "eu_ai_act_compliance",
+    "shadow_ai_discovery",
+    "contract_enforcer",
+    "explanation_drift",
+    "self_healing_assertions",
+    "pipeline_circuit_breaker",
+    "deprecation_advisor"
+  ],
+  "resolution_time_minutes": 0.0,
+  "health_score": 89,
+  "health_assessment": "reliable",
+  "datahub_mutations": 17,
+  "validation_passed": false,
+  "reflexion": {
+    "pattern_id": "schema-change-type-mismatch",
+    "improvement": "Resolution time: 0.0min \u2192 0.0min"
+  },
+  "compliance": {
+    "articles_covered": [
+      "12",
+      "13",
+      "14"
+    ],
+    "audit_chain_length": 3
+  },
+  "cost_attribution": {
+    "incident_id": "42",
+    "total_tokens_in": 0,
+    "total_tokens_out": 0,
+    "total_cost_usd": 0.0,
+    "total_duration_ms": 0.0,
+    "worker_costs": [],
+    "manual_time_minutes": 45.0,
+    "time_saved_minutes": 45.0,
+    "incidents_prevented": 0,
+    "revenue_at_risk": 0,
+    "roi_percentage": 0.0,
+    "cost_per_minute_saved": 0.0
+  },
+  "provenance": {
+    "incident_id": "42",
+    "worker_provenances": {
+      "planner": {
+        "worker_id": "planner",
+        "context_sources": [
+          {
+            "source_id": "planner-0",
+            "source_type": "datahub_metadata",
+            "source_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,meridian.raw_events,PROD)",
+            "source_name": "Dataset metadata",
+            "retrieved_at": 1784006987.0839784,
+            "freshness_seconds": 0.0,
+            "confidence": 1.0,
+            "verified": true,
+            "metadata": {}
+          }
+        ],
+        "llm_calls": [],
+        "total_confidence": 1.0,
+        "verified_sources": 1,
+        "unverified_sources": 0,
+        "source_count": 1
+      }
+    },
+    "total_context_sources": 1,
+    "total_verified": 1,
+    "total_unverified": 0,
+    "overall_confidence": 1.0,
+    "provenance_score": 1.0
+  }
+}

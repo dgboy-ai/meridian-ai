@@ -1,0 +1,103 @@
+{
+  "incident_id": "INC-42",
+  "type": "ML_MODEL_DEGRADATION",
+  "severity": "HIGH",
+  "status": "RESOLVED",
+  "resolution_time_minutes": 0.0,
+  "root_cause": "ROOT CAUSE: raw_events (dataset) \u2014 1 downstream entities affected. Models: none. Datasets: feature_pipeline. Revenue at risk: $45,120/day. Propagation: feature_pipeline \u2192 feature_store \u2192 churn_model_v3 \u2192 feature_pipeline \u2192 feature_store. Paths traced: 3.",
+  "affected_models": [
+    "urn:li:mlModel:(urn:li:dataPlatform:mlflow,churn_model_v3,PROD)",
+    "urn:li:mlModel:(urn:li:dataPlatform:mlflow,ltv_model_v2,PROD)",
+    "urn:li:mlModel:(urn:li:dataPlatform:mlflow,segment_model_v1,PROD)"
+  ],
+  "evidence_chain": [
+    {
+      "worker": "data_sentinel",
+      "confidence": 0.95,
+      "finding": "DATA SENTINEL: 2 detections in raw_events. schema_change: 1 type changes, 0 added, 0 removed | pii_exposure: 10 PII violations in 4 columns"
+    },
+    {
+      "worker": "feature_drift",
+      "confidence": 0.9,
+      "finding": "FEATURE DRIFT: 8 features affected. Type mismatches: age_bucket: INT\u2192MISSING, event_frequency: INT\u2192MISSING, session_duration: INT\u2192MISSING, event_id: MISSING\u2192STRING, user_age: MISSING\u2192STRING, timestamp: MISSING\u2192TIMESTAMP. PSI/KS per feature: event_frequency=PSI:6.6338/KS:0.8000, session_duration=PSI:6.0892/KS:0.8000. Overall: 1.0000"
+    },
+    {
+      "worker": "training_serving_skew",
+      "confidence": 0.9,
+      "finding": "TRAINING-SERVING SKEW in churn_model_v3: 1 type mismatches, 0 missing features. Type changes: age_bucket: INT\u2192STRING. Skew score: 1.00"
+    },
+    {
+      "worker": "data_leakage",
+      "confidence": 0.95,
+      "finding": "No temporal data leakage detected in feature_store for churn_model_v3. Timestamp columns: none. No suspicious patterns found."
+    },
+    {
+      "worker": "root_cause",
+      "confidence": 0.96,
+      "finding": "ROOT CAUSE: raw_events (dataset) \u2014 1 downstream entities affected. Models: none. Datasets: feature_pipeline. Revenue at risk: $45,120/day. Propagation: feature_pipeline \u2192 feature_store \u2192 churn_model_v3 \u2192 feature_pipeline \u2192 feature_store. Paths traced: 3."
+    },
+    {
+      "worker": "knowledge_writer",
+      "confidence": 0.99,
+      "finding": "Knowledge written to DataHub: root cause report, AI Knowledge panel updated on 3 models (health=89, confidence=0.96, resolved=28, patterns=0, prior_incidents=0), playbook updated. Resolution: 0.0min"
+    },
+    {
+      "worker": "reflexion",
+      "confidence": 0.92,
+      "finding": "Resolution time: 0.0min \u2192 0.0min"
+    },
+    {
+      "worker": "lifecycle_governance",
+      "confidence": 0.95,
+      "finding": "Lifecycle change not warranted for ltv_model_v2 \u2014 health score 89 above threshold 60"
+    },
+    {
+      "worker": "eu_ai_act_compliance",
+      "confidence": 0.98,
+      "finding": "EU AI Act Technical File generated for incident #42: 3 audit records, Articles 12/13/14 covered, chain VALID"
+    },
+    {
+      "worker": "shadow_ai_discovery",
+      "confidence": 0.99,
+      "finding": "All 3 models have proper governance. No shadow AI detected."
+    },
+    {
+      "worker": "contract_enforcer",
+      "confidence": 0.95,
+      "finding": "Contract compliance OK for raw_events: 1/5 failures within tolerance"
+    },
+    {
+      "worker": "explanation_drift",
+      "confidence": 0.88,
+      "finding": "EXPLANATION DRIFT in churn_model_v3: 3 features shifted. Changes: age_bucket: 0.35\u21920.08, event_frequency: 0.28\u21920.42, session_duration: 0.22\u21920.35. Total drift: 0.5400"
+    },
+    {
+      "worker": "self_healing_assertions",
+      "confidence": 0.9,
+      "finding": "Generated preventive assertion for schema-change-type-mismatch: Assert field types match expected schema (schema_field_type_check). Would have caught incident #42 earlier."
+    },
+    {
+      "worker": "pipeline_circuit_breaker",
+      "confidence": 0.9,
+      "finding": "PIPELINE CIRCUIT BREAKER: quality_failure in raw_events. 1 downstream pipelines would be affected. Halted: feature_pipeline. Severity: CRITICAL."
+    },
+    {
+      "worker": "deprecation_advisor",
+      "confidence": 0.85,
+      "finding": "DEPRECATION UNSAFE: raw_events (dataset) has 1 downstream dependencies. Models: none. Datasets: feature_pipeline."
+    }
+  ],
+  "business_impact": {
+    "health_score": 89,
+    "datahub_mutations": 17,
+    "compliance_articles": [
+      "12",
+      "13",
+      "14"
+    ]
+  },
+  "resolution": {
+    "playbook_match": "schema-change-type-mismatch",
+    "improvement": "Resolution time: 0.0min \u2192 0.0min"
+  }
+}

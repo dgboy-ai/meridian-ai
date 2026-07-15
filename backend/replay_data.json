@@ -1,0 +1,132 @@
+{
+  "incidents": {
+    "42": {
+      "id": "42",
+      "title": "Schema Change in raw_events",
+      "severity": "HIGH",
+      "status": "RESOLVED",
+      "detected": "2026-07-12T09:31:12Z",
+      "resolved": "2026-07-12T09:39:26Z",
+      "duration_seconds": 494,
+      "root_cause": "Column type change in raw_events.age (INT to STRING) broke the age_bucket feature transformation, causing churn_model_v3 to degrade from 89% to 71% accuracy.",
+      "pattern_id": "schema-change-type-mismatch",
+      "affected_models": ["churn_model_v3", "ltv_model_v2", "segment_model_v1"],
+      "timeline": [
+        {"time": "09:31:12", "step": "planner", "status": "started", "finding": "Investigation initiated for incident #42", "confidence": 1.0, "message": "Schema change detected in raw_events"},
+        {"time": "09:31:14", "step": "data_sentinel", "status": "completed", "finding": "SCHEMA CHANGE DETECTED: raw_events — user_age: INT→STRING", "confidence": 0.95, "severity": "high", "message": "Schema diff computed: 1 type change detected"},
+        {"time": "09:31:16", "step": "feature_drift", "status": "completed", "finding": "FEATURE DRIFT: age_bucket type mismatch INT→STRING, PSI=0.0, KS=0.0", "confidence": 0.95, "message": "PSI/KS drift scores computed for 2 numeric features, 1 type mismatch"},
+        {"time": "09:31:18", "step": "training_serving_skew", "status": "completed", "finding": "TRAINING-SERVING SKEW: age_bucket INT→STRING, skew score 0.25", "confidence": 0.90, "message": "Compared feature_store schema against churn_model_v3 training schema"},
+        {"time": "09:31:20", "step": "data_leakage", "status": "completed", "finding": "No temporal data leakage detected", "confidence": 0.95, "message": "Checked 4 fields and 1 queries for temporal leakage"},
+        {"time": "09:31:22", "step": "root_cause", "status": "completed", "finding": "ROOT CAUSE TRAVERSED: 3 downstream entities, revenue at risk $45,120/day", "confidence": 0.96, "message": "Lineage traversal + blast radius computed in code"},
+        {"time": "09:31:24", "step": "validation", "status": "completed", "finding": "Deterministic validation PASSED", "confidence": 1.0, "message": "All validation checks passed"},
+        {"time": "09:31:26", "step": "knowledge_writer", "status": "completed", "finding": "Root cause report + AI Knowledge panel written to DataHub", "confidence": 0.99, "message": "4 artifacts written: report, panel, playbook, incident record"},
+        {"time": "09:31:28", "step": "reflexion", "status": "completed", "finding": "Playbook improved: Resolution time: 18min → 8min", "confidence": 0.92, "message": "Reflexion loop: playbook updated with new incident data"},
+        {"time": "09:31:30", "step": "lifecycle_governance", "status": "completed", "finding": "Lifecycle change not warranted for ltv_model_v2 — health 62 above threshold", "confidence": 0.95, "message": "Evaluated model lifecycle health"},
+        {"time": "09:31:32", "step": "eu_ai_act_compliance", "status": "completed", "finding": "EU AI Act Technical File: 3 audit records, Articles 12/13/14, chain VALID", "confidence": 0.98, "message": "SHA-256 audit chain generated"},
+        {"time": "09:31:34", "step": "shadow_ai_discovery", "status": "completed", "finding": "All 3 models have proper governance. No shadow AI detected.", "confidence": 0.99, "message": "Scanned 3 models for governance gaps"},
+        {"time": "09:31:36", "step": "contract_enforcer", "status": "completed", "finding": "Contract compliance OK: 1/5 failures within tolerance", "confidence": 0.95, "message": "Checked dataset contract compliance"},
+        {"time": "09:31:38", "step": "planner", "status": "completed", "finding": "Investigation #42 complete. 11 workers fired, artifacts written to DataHub.", "confidence": 1.0, "message": "Cumulative intelligence: 18min → 3min = 6x faster"}
+      ],
+      "blast_radius": {
+        "source": {"urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,meridian.raw_events,PROD)", "name": "raw_events", "type": "dataset", "status": "critical"},
+        "affected": [
+          {"urn": "urn:li:dataset:(urn:li:dataPlatform:dbt,meridian.feature_pipeline,PROD)", "name": "feature_pipeline", "type": "dataset", "status": "warning"},
+          {"urn": "urn:li:dataset:(urn:li:dataPlatform:feast,meridian.feature_store,PROD)", "name": "feature_store", "type": "dataset", "status": "warning"},
+          {"urn": "urn:li:mlModel:(urn:li:dataPlatform:mlflow,churn_model_v3,PROD)", "name": "churn_model_v3", "type": "mlModel", "status": "critical", "health_score": 81, "confidence": 0.97},
+          {"urn": "urn:li:mlModel:(urn:li:dataPlatform:mlflow,ltv_model_v2,PROD)", "name": "ltv_model_v2", "type": "mlModel", "status": "critical", "health_score": 62, "confidence": 0.88},
+          {"urn": "urn:li:mlModel:(urn:li:dataPlatform:mlflow,segment_model_v1,PROD)", "name": "segment_model_v1", "type": "mlModel", "status": "warning", "health_score": 91, "confidence": 0.95}
+        ],
+        "business_impact": {"predictions_today": 32000, "revenue_at_risk_daily": 45000, "affected_dashboards": 12}
+      },
+      "writeback": {
+        "root_cause_report": {"title": "Incident #42 — Root Cause Report", "status": "written"},
+        "ai_knowledge_panel": {"entity": "churn_model_v3", "status": "updated", "health_score": 81, "confidence": 0.97, "resolved_incidents": 14},
+        "playbook": {"title": "Playbook: Schema Change to Model Degradation", "status": "updated"},
+        "incident_record": {"id": "INC-1", "linked_entities": 15, "status": "raised"}
+      }
+    },
+    "28": {
+      "id": "28",
+      "title": "Feature Pipeline Freshness Violation",
+      "severity": "MEDIUM",
+      "status": "RESOLVED",
+      "detected": "2026-05-15T14:22:00Z",
+      "resolved": "2026-05-15T14:30:00Z",
+      "duration_seconds": 480,
+      "root_cause": "Airflow DAG delay of 4 hours caused churn_model_v3 to use stale features.",
+      "pattern_id": "freshness-violation",
+      "affected_models": ["churn_model_v3"],
+      "timeline": [
+        {"time": "14:22:00", "step": "planner", "status": "started", "finding": "Investigation initiated for incident #28", "confidence": 1.0},
+        {"time": "14:22:02", "step": "data_sentinel", "status": "completed", "finding": "Freshness violation: feature_pipeline stale 4h", "confidence": 0.92, "severity": "medium"},
+        {"time": "14:22:04", "step": "feature_drift", "status": "completed", "finding": "No significant feature drift detected", "confidence": 0.95},
+        {"time": "14:22:06", "step": "training_serving_skew", "status": "completed", "finding": "No training-serving skew detected", "confidence": 0.95},
+        {"time": "14:22:08", "step": "data_leakage", "status": "completed", "finding": "No temporal data leakage detected", "confidence": 0.95},
+        {"time": "14:22:10", "step": "root_cause", "status": "completed", "finding": "ROOT CAUSE: feature_pipeline (dataset) — 1 downstream entity affected. Models: churn_model_v3.", "confidence": 0.89},
+        {"time": "14:22:12", "step": "validation", "status": "completed", "finding": "Deterministic validation PASSED", "confidence": 1.0},
+        {"time": "14:22:14", "step": "knowledge_writer", "status": "completed", "finding": "Root cause report written to DataHub", "confidence": 0.99},
+        {"time": "14:22:16", "step": "reflexion", "status": "completed", "finding": "Playbook improved: freshness-violation pattern documented", "confidence": 0.92},
+        {"time": "14:22:18", "step": "lifecycle_governance", "status": "completed", "finding": "Lifecycle change not warranted", "confidence": 0.95},
+        {"time": "14:22:20", "step": "eu_ai_act_compliance", "status": "completed", "finding": "EU AI Act Technical File generated", "confidence": 0.98},
+        {"time": "14:22:22", "step": "shadow_ai_discovery", "status": "completed", "finding": "All models have proper governance", "confidence": 0.99},
+        {"time": "14:22:24", "step": "contract_enforcer", "status": "completed", "finding": "Contract compliance OK", "confidence": 0.95},
+        {"time": "14:22:26", "step": "planner", "status": "completed", "finding": "Investigation #28 complete in 8.0min. 12 workers fired.", "confidence": 1.0}
+      ],
+      "blast_radius": {
+        "source": {"urn": "urn:li:dataset:(urn:li:dataPlatform:dbt,meridian.feature_pipeline,PROD)", "name": "feature_pipeline", "type": "dataset", "status": "warning"},
+        "affected": [{"urn": "urn:li:mlModel:(urn:li:dataPlatform:mlflow,churn_model_v3,PROD)", "name": "churn_model_v3", "type": "mlModel", "status": "warning", "health_score": 75}],
+        "business_impact": {"predictions_today": 32000, "revenue_at_risk_daily": 15000, "affected_dashboards": 4}
+      },
+      "writeback": {
+        "root_cause_report": {"title": "Incident #28 — Root Cause Report", "status": "written"},
+        "ai_knowledge_panel": {"entity": "churn_model_v3", "status": "updated", "health_score": 75, "resolved_incidents": 2}
+      }
+    },
+    "12": {
+      "id": "12",
+      "title": "Schema Change in raw_events",
+      "severity": "HIGH",
+      "status": "RESOLVED",
+      "detected": "2026-03-10T10:15:00Z",
+      "resolved": "2026-03-10T10:33:00Z",
+      "duration_seconds": 1080,
+      "root_cause": "First occurrence of schema change. Column type INT changed to STRING.",
+      "pattern_id": "schema-change-type-mismatch",
+      "affected_models": ["churn_model_v3", "ltv_model_v2"],
+      "timeline": [
+        {"time": "10:15:00", "step": "planner", "status": "started", "finding": "Investigation initiated for incident #12", "confidence": 1.0},
+        {"time": "10:15:02", "step": "data_sentinel", "status": "completed", "finding": "SCHEMA CHANGE DETECTED: raw_events — user_age: INT→STRING", "confidence": 0.91, "severity": "high"},
+        {"time": "10:15:04", "step": "feature_drift", "status": "completed", "finding": "FEATURE DRIFT: 1 type mismatch detected", "confidence": 0.87},
+        {"time": "10:15:06", "step": "training_serving_skew", "status": "completed", "finding": "TRAINING-SERVING SKEW: age_bucket INT→STRING", "confidence": 0.85, "severity": "high"},
+        {"time": "10:15:08", "step": "data_leakage", "status": "completed", "finding": "No temporal data leakage detected", "confidence": 0.95},
+        {"time": "10:15:10", "step": "root_cause", "status": "completed", "finding": "ROOT CAUSE TRAVERSED: 2 downstream entities affected. Revenue at risk: $35,000/day.", "confidence": 0.88},
+        {"time": "10:15:12", "step": "validation", "status": "completed", "finding": "Deterministic validation PASSED", "confidence": 1.0},
+        {"time": "10:15:14", "step": "knowledge_writer", "status": "completed", "finding": "Knowledge written: root cause report, playbook CREATED (first occurrence)", "confidence": 0.99},
+        {"time": "10:15:16", "step": "reflexion", "status": "completed", "finding": "First occurrence — playbook created from scratch", "confidence": 0.85},
+        {"time": "10:15:18", "step": "lifecycle_governance", "status": "completed", "finding": "Lifecycle change not warranted", "confidence": 0.95},
+        {"time": "10:15:20", "step": "eu_ai_act_compliance", "status": "completed", "finding": "EU AI Act Technical File generated", "confidence": 0.98},
+        {"time": "10:15:22", "step": "shadow_ai_discovery", "status": "completed", "finding": "All models have proper governance", "confidence": 0.99},
+        {"time": "10:15:24", "step": "contract_enforcer", "status": "completed", "finding": "Contract compliance OK", "confidence": 0.95},
+        {"time": "10:15:26", "step": "planner", "status": "completed", "finding": "Investigation #12 complete in 18.0min. First occurrence — playbook created.", "confidence": 1.0}
+      ],
+      "blast_radius": {
+        "source": {"urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,meridian.raw_events,PROD)", "name": "raw_events", "type": "dataset", "status": "critical"},
+        "affected": [
+          {"urn": "urn:li:mlModel:(urn:li:dataPlatform:mlflow,churn_model_v3,PROD)", "name": "churn_model_v3", "type": "mlModel", "status": "critical"},
+          {"urn": "urn:li:mlModel:(urn:li:dataPlatform:mlflow,ltv_model_v2,PROD)", "name": "ltv_model_v2", "type": "mlModel", "status": "critical"}
+        ],
+        "business_impact": {"predictions_today": 28000, "revenue_at_risk_daily": 35000, "affected_dashboards": 8}
+      },
+      "writeback": {
+        "root_cause_report": {"title": "Incident #12 — Root Cause Report", "status": "written"},
+        "ai_knowledge_panel": {"entity": "churn_model_v3", "status": "updated", "health_score": 70, "resolved_incidents": 1},
+        "playbook": {"title": "Playbook: Schema Change to Model Degradation", "status": "created"}
+      }
+    }
+  },
+  "resolution_times": [
+    {"id": "12", "duration_minutes": 18, "date": "2026-03-10", "pattern": "schema-change-type-mismatch"},
+    {"id": "28", "duration_minutes": 8, "date": "2026-05-15", "pattern": "freshness-violation"},
+    {"id": "42", "duration_minutes": 8, "date": "2026-07-12", "pattern": "schema-change-type-mismatch"}
+  ]
+}

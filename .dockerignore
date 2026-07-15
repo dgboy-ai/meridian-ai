@@ -1,0 +1,64 @@
+# Version control
+.git
+.gitignore
+
+# Dependencies
+node_modules
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info
+dist
+build
+.eggs
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Tests and scripts (not needed in production image)
+tests
+scripts
+.pytest_cache
+.coverage
+htmlcov
+
+# Frontend (separate build context)
+frontend
+
+# Documentation (not needed in runtime image)
+*.md
+LICENSE
+HACKATHON_STRATEGY.md
+MERIDIAN_*.md
+DEVPOST_SUBMISSION.md
+VIDEO_SCRIPT.md
+QUICKSTART.md
+mimo_newidea.md
+
+# Mock data and examples
+examples
+
+# Docker files
+docker-compose.yml
+Dockerfile*
+.dockerignore
+
+# Build artifacts
+.next
+out
+.mimocode
