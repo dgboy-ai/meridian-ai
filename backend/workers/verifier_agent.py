@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.models import EvidenceObject, Severity, EvidenceItem, DataHubMutation
+from backend.models import EvidenceObject, Severity, EvidenceItem
 from backend.stats import traverse_lineage
 
 logger = logging.getLogger("meridian-ai.verifier")
@@ -136,7 +136,6 @@ class VerifierAgent:
                 f"Confidence {confidence:.2f} meets threshold."
             )
             severity = Severity.LOW
-            verified = True
         else:
             failed_checks = [c for c in verification_checks if not c["passed"]]
             finding = (
@@ -146,7 +145,6 @@ class VerifierAgent:
                 f"Recommend human review."
             )
             severity = Severity.HIGH
-            verified = False
 
         return EvidenceObject(
             worker_id="verifier_agent",
@@ -218,7 +216,7 @@ Include your reasoning.""",
         # Parse response
         verified = "VERIFIED" in response.upper()
         questionable = "QUESTIONABLE" in response.upper()
-        rejected = "REJECTED" in response.upper()
+        "REJECTED" in response.upper()
 
         if verified:
             finding = f"LLM VERIFICATION: Conclusion verified. {response[:200]}"

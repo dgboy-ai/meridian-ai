@@ -17,7 +17,6 @@ its source, freshness, and the policies that permitted access."
 import time
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from enum import Enum
 
 logger = logging.getLogger("meridian-ai.provenance")

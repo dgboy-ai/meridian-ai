@@ -13,14 +13,14 @@ Based on DataHub's metadata propagation pattern:
 that context through the lineage graph."
 """
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
 from backend.models import EvidenceObject, Severity, EvidenceItem, DataHubMutation
-from backend.stats import traverse_lineage, ColumnDependency
-from backend.scanners.pii_scanner import PIIScanner, ComplianceViolation, PIIFinding
+from backend.stats import traverse_lineage
+from backend.scanners.pii_scanner import PIIScanner
 
 logger = logging.getLogger("meridian-ai.pii_propagation")
 
@@ -99,7 +99,7 @@ class PIIPropagationTracker:
         for urn in traversal.downstream_urns:
             entity = entities_dict.get(urn, {})
             entity_name = entity.get("name", "")
-            entity_type = entity.get("type", "")
+            entity.get("type", "")
 
             # For each PII column, create a propagation path
             for pii_col in pii_columns:

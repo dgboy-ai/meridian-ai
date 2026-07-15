@@ -1,6 +1,6 @@
 """Pydantic schemas for API request/response validation."""
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional, Any
+from typing import Optional
 from enum import Enum
 
 

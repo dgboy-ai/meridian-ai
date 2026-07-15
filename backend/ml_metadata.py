@@ -17,11 +17,9 @@ Based on DataHub's ML Metadata Model:
 """
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.models import EvidenceObject, Severity, EvidenceItem, DataHubMutation
 
 logger = logging.getLogger("meridian-ai.ml_metadata")
 

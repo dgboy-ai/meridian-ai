@@ -8,9 +8,7 @@ dispatches events to the appropriate handler.
 """
 import json
 import logging
-import asyncio
 from datetime import datetime, timezone
-from collections.abc import AsyncIterator
 
 logger = logging.getLogger("meridian-ai.actions.listener")
 

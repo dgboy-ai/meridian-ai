@@ -16,7 +16,6 @@ Examples:
 """
 import asyncio
 import sys
-import json
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -65,7 +64,7 @@ async def investigate(model_urn: str, incident_id: str = "AUTO"):
     # Print summary (safe even if no events were yielded)
     summary = event.get("summary", {}) if event else {}
     print(f"\n{'='*60}")
-    print(f"  INVESTIGATION COMPLETE")
+    print("  INVESTIGATION COMPLETE")
     print(f"  Workers fired: {len(summary.get('workers_fired', []))}")
     print(f"  Health score: {summary.get('health_score', 'N/A')}")
     print(f"  DataHub mutations: {summary.get('datahub_mutations', 0)}")
@@ -100,7 +99,7 @@ async def health(model_urn: str):
     print(f"{'='*60}")
     print(f"\n  Score: {health_score.score}/100 ({health_score.assessment.value})")
     print(f"  Confidence: {health_score.confidence:.0%}")
-    print(f"\n  Metric Breakdown:")
+    print("\n  Metric Breakdown:")
     for m in health_score.metrics:
         bar = "█" * int(m.normalized_value * 10) + "░" * (10 - int(m.normalized_value * 10))
         print(f"    {m.name:20s} {bar}  {m.normalized_value:.2f}")
@@ -155,7 +154,7 @@ def serve(port: int = 8000):
     import uvicorn
     print(f"\nStarting Meridian AI on http://localhost:{port}")
     print(f"API docs: http://localhost:{port}/docs")
-    print(f"Press Ctrl+C to stop.\n")
+    print("Press Ctrl+C to stop.\n")
     uvicorn.run("backend.main:app", host="0.0.0.0", port=port, log_level="info")
 
 

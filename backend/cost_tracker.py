@@ -13,7 +13,6 @@ This module tracks:
 import time
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 
 logger = logging.getLogger("meridian-ai.cost_tracker")
 

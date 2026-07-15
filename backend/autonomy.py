@@ -9,7 +9,6 @@ Based on strategy document lines 251-259:
 """
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Callable, Optional
 
 
 class AutonomyLevel(IntEnum):

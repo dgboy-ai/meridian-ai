@@ -16,11 +16,9 @@ Flags violations against:
 - HIPAA Section 164.514
 """
 import re
-import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Optional
 
 from backend.models import Severity
 

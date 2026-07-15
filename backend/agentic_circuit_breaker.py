@@ -18,9 +18,7 @@ hallucination/loop detected, implements graduated re-enablement."
 import time
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from enum import Enum
-from collections import defaultdict
 
 logger = logging.getLogger("meridian-ai.agentic_circuit_breaker")
 

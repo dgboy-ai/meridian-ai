@@ -2,7 +2,7 @@
 import time
 import logging
 from enum import Enum
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Callable, Any, Optional
 from functools import wraps
 
@@ -190,7 +190,7 @@ def with_circuit_breaker(
                 result = func(*args, **kwargs)
                 breaker.record_success()
                 return result
-            except Exception as e:
+            except Exception:
                 breaker.record_failure()
                 raise
         wrapper.circuit_breaker = breaker  # type: ignore[attr-defined]

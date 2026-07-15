@@ -5,10 +5,9 @@ import time
 import uuid
 import asyncio
 import logging
-from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
-from fastapi import FastAPI, Query, Request, Response
+from fastapi import FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -21,7 +20,7 @@ from backend.workers.planner import PlannerAgent
 from backend.schemas import (
     HealthResponse, ReadinessResponse, LivenessResponse, MetricsResponse,
     IncidentsResponse, IncidentSummary, ResolutionTimesResponse, ResolutionTimeEntry,
-    ModelResponse, ErrorResponse, SSEEvent, InvestigationMode,
+    ModelResponse, ErrorResponse, InvestigationMode,
 )
 
 # ─── Logging ───────────────────────────────────────────────────────────────────

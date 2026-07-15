@@ -13,10 +13,8 @@ Based on DataHub's context management pattern:
 "Every piece of context delivered to an agent should carry metadata about
 its source, freshness, and the policies that permitted access."
 """
-import time
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 
 logger = logging.getLogger("meridian-ai.provenance_validator")
 

@@ -13,7 +13,6 @@ Based on OpenLineage specification:
 - outputs: Knowledge written to DataHub
 """
 import hashlib
-import json
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone

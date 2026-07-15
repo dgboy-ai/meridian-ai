@@ -7,9 +7,8 @@ Based on strategy document lines 364-400:
 - Writes improved playbook back to DataHub Knowledge Base
 - This is how the system gets faster every incident
 """
-import json
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Optional
 

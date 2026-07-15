@@ -10,7 +10,7 @@ import hashlib
 import json
 from pathlib import Path
 from datetime import datetime, timezone
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient

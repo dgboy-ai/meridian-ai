@@ -11,7 +11,6 @@ from datetime import datetime, timezone
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
 from backend.models import EvidenceObject, Severity, EvidenceItem, DataHubMutation
-from backend.stats import feature_drift_score
 
 
 class ExplanationDrift:

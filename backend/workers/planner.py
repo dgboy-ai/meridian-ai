@@ -11,7 +11,6 @@ Fixes applied:
 - Integrates MLMetadataIntegrator for ML-specific entity queries
 - Integrates AgenticCircuitBreaker for agent reasoning health
 """
-import json
 import time
 import logging
 from datetime import datetime, timezone

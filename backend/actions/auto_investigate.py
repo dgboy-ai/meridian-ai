@@ -24,11 +24,8 @@ action:
       max_investigation_time_seconds: 300
 ```
 """
-import json
 import logging
-import asyncio
 from datetime import datetime, timezone
-from typing import Any, Optional
 
 logger = logging.getLogger("meridian-ai.actions")
 
@@ -107,7 +104,7 @@ class AutoInvestigateAction:
     def _assess_severity(self, event: dict) -> str:
         """Assess the severity of a metadata change event."""
         aspect = event.get("aspect", "")
-        event_type = event.get("event_type", "")
+        event.get("event_type", "")
 
         # High severity: schema changes, ownership changes
         if aspect in ["schemaMetadata", "ownership", "globalTags"]:

@@ -79,7 +79,6 @@ class DataSentinel:
             })
 
         # ── DETECTION 2: Freshness violation ───────────────────────────
-        freshness_violated = False
         # In production: check last_update_time from DataHub aspects
         # For demo: simulate freshness check based on entity metadata
         if entity.get("last_update"):
@@ -88,7 +87,6 @@ class DataSentinel:
                 age_seconds = (datetime.now(timezone.utc) - last_update).total_seconds()
                 threshold = FRESHNESS_THRESHOLDS.get(entity.get("type", "dataset"), 3600)
                 if age_seconds > threshold:
-                    freshness_violated = True
                     detections.append({
                         "type": "freshness_violation",
                         "severity": "HIGH",

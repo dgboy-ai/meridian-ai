@@ -12,7 +12,6 @@ import os
 import json
 import logging
 import asyncio
-from typing import Any, Optional
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 from urllib.parse import quote

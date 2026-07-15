@@ -13,7 +13,6 @@ Based on OpenTelemetry Python SDK patterns.
 import time
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from contextlib import contextmanager
 
 logger = logging.getLogger("meridian-ai.telemetry")

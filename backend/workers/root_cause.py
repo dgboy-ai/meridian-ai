@@ -118,7 +118,6 @@ class RootCause:
         # ── COMPUTATION 3: Root cause entity identification ────────────
         # Score all candidate entities and pick the highest-scoring one
         best_score = -1.0
-        root_cause_urn = source_urn
         root_cause_entity = entities_dict.get(source_urn, {})
         for urn, ent in entities_dict.items():
             score = self.compute_root_cause_score(
@@ -130,7 +129,6 @@ class RootCause:
             )
             if score > best_score:
                 best_score = score
-                root_cause_urn = urn
                 root_cause_entity = ent
         root_cause_name = root_cause_entity.get("name", "unknown")
         root_cause_type = root_cause_entity.get("type", "unknown")
@@ -155,9 +153,8 @@ class RootCause:
 
         # ── COMPUTATION 6: Column-level impact ─────────────────────────
         column_impact_str = ""
-        column_blast_radius = {}
         if column_traversal and column_traversal.column_dependencies:
-            column_blast_radius = column_traversal.get_column_blast_radius()
+            column_traversal.get_column_blast_radius()
             affected_col_count = len(column_traversal.affected_columns)
             source_cols = ", ".join(column_traversal.source_columns)
             column_impact_str = f" Columns affected: {affected_col_count}. Source columns: {source_cols}."

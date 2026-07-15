@@ -5,15 +5,12 @@ based on actual DataHub metadata changes, quality checks, and lineage analysis.
 
 This makes the demo realistic — incidents come from real data, not pre-recorded.
 """
-import json
-import time
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.stats import compute_schema_diff, traverse_lineage, compute_blast_radius
 
 logger = logging.getLogger("meridian-ai.incident_generator")
 
@@ -125,7 +122,7 @@ class IncidentGenerator:
         models = await self.mcp.search(query="", entity_type="mlModel")
 
         for model in models:
-            model_urn = model.get("urn", "")
+            model.get("urn", "")
             model_name = model.get("name", "")
 
             # Check health score

@@ -13,7 +13,6 @@ Confidence: min(worker_confidences). If any < 0.7 → "unreliable". If < 3 worke
 """
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
 
 
 class AssessmentLevel(str, Enum):

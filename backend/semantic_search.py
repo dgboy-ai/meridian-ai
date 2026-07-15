@@ -10,9 +10,7 @@ When keyword search fails to find relevant playbooks (because the terminology
 differs), semantic search finds playbooks that are conceptually similar.
 """
 import logging
-import hashlib
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 
 logger = logging.getLogger("meridian-ai.semantic_search")
 

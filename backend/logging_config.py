@@ -6,7 +6,6 @@ import logging
 import sys
 import uuid
 from contextvars import ContextVar
-from typing import Callable
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request

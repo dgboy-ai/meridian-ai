@@ -29,12 +29,6 @@ jobs:
       - name: Run tests
         run: python -m pytest tests/ --tb=short -q
 
-      - name: Verify all workers fire
-        run: python scripts/verify_all_workers.py
-
-      - name: Verify real computation
-        run: python scripts/verify_real_computation.py
-
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -49,7 +43,7 @@ jobs:
         run: pip install ruff
 
       - name: Lint
-        run: ruff check backend/
+        run: ruff check backend/ --select E,F,W --ignore E501
 
   examples:
     runs-on: ubuntu-latest

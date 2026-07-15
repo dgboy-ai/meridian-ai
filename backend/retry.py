@@ -23,7 +23,7 @@ def async_retry(
             while True:
                 try:
                     return await func(*args, **kwargs)
-                except retryable_exceptions as e:
+                except retryable_exceptions:
                     retries += 1
                     if retries > max_retries:
                         raise

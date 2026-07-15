@@ -78,7 +78,7 @@ class CostWriter:
         results = []
         for model_urn in model_urns:
             try:
-                result = await self.mcp.add_structured_properties(
+                await self.mcp.add_structured_properties(
                     entity_urn=model_urn,
                     properties=cost_properties,
                 )
@@ -143,7 +143,7 @@ class CostWriter:
         results = []
         for model_urn in model_urns:
             try:
-                result = await self.mcp.add_structured_properties(
+                await self.mcp.add_structured_properties(
                     entity_urn=model_urn,
                     properties=aggregate_properties,
                 )

@@ -135,7 +135,7 @@ class EntityLinker:
 
         # 3. Link playbook to incident (if playbook exists)
         playbook_link = EntityLink(
-            source_urn=f"playbook:schema-change-type-mismatch",
+            source_urn="playbook:schema-change-type-mismatch",
             target_urn=f"incident:{incident_id}",
             link_type="playbook_to_incident",
             relationship="applied_to",
@@ -162,7 +162,7 @@ class EntityLinker:
             evidence=[
                 EvidenceItem(
                     type="entity_linking",
-                    description=f"Created {len(links_created)} links: {', '.join(l.link_type for l in links_created)}",
+                    description=f"Created {len(links_created)} links: {', '.join(link.link_type for link in links_created)}",
                     entity_urn=dataset_urn,
                     affected_models=model_urns,
                 ),
