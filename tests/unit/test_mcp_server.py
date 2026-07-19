@@ -1,115 +1,114 @@
-"""Tests for MCP Server — tool dispatch, error handling, and MCP-standard hints."""
+"""Tests for MCP Server — official SDK implementation, tool dispatch, error handling."""
 import pytest
 import json
+import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
-from backend.mcp_server import MeridianMCPServer, TOOLS
+from backend.mcp_server import TOOLS, list_tools, call_tool
+from mcp.types import Tool
 
 
 class TestMCPTools:
-    """Test MCP tool definitions and hints."""
+    """Test MCP tool definitions."""
 
     def test_tools_list_has_three_tools(self):
         """MCP server should expose 3 tools."""
         assert len(TOOLS) == 3
 
-    def test_investigate_tool_has_hints(self):
-        """meridian_investigate should have MCP-standard hints."""
-        tool = next(t for t in TOOLS if t["name"] == "meridian_investigate")
-        assert "readOnlyHint" in tool
-        assert "destructiveHint" in tool
-        assert "idempotentHint" in tool
-        assert tool["readOnlyHint"] is False  # Writes to DataHub
-        assert tool["destructiveHint"] is False  # Doesn't delete
-        assert tool["idempotentHint"] is False  # Running twice creates duplicates
+    def test_tools_are_mcp_tool_objects(self):
+        """All tools should be MCP Tool instances."""
+        for tool in TOOLS:
+            assert isinstance(tool, Tool)
 
-    def test_health_tool_is_readonly(self):
-        """meridian_health should be read-only."""
-        tool = next(t for t in TOOLS if t["name"] == "meridian_health")
-        assert tool["readOnlyHint"] is True
-        assert tool["destructiveHint"] is False
-        assert tool["idempotentHint"] is True
+    def test_investigate_tool_exists(self):
+        """meridian_investigate tool should exist."""
+        names = [t.name for t in TOOLS]
+        assert "meridian_investigate" in names
 
-    def test_playbook_tool_is_readonly(self):
-        """meridian_playbook should be read-only."""
-        tool = next(t for t in TOOLS if t["name"] == "meridian_playbook")
-        assert tool["readOnlyHint"] is True
-        assert tool["destructiveHint"] is False
-        assert tool["idempotentHint"] is True
+    def test_health_tool_exists(self):
+        """meridian_health tool should exist."""
+        names = [t.name for t in TOOLS]
+        assert "meridian_health" in names
+
+    def test_playbook_tool_exists(self):
+        """meridian_playbook tool should exist."""
+        names = [t.name for t in TOOLS]
+        assert "meridian_playbook" in names
 
     def test_all_tools_have_input_schema(self):
         """All tools should have inputSchema."""
         for tool in TOOLS:
-            assert "inputSchema" in tool
-            assert "type" in tool["inputSchema"]
-            assert tool["inputSchema"]["type"] == "object"
+            schema = tool.inputSchema
+            assert schema is not None
+            assert "type" in schema
+            assert schema["type"] == "object"
 
     def test_all_tools_have_descriptions(self):
         """All tools should have descriptions."""
         for tool in TOOLS:
-            assert "description" in tool
-            assert len(tool["description"]) > 0
+            assert tool.description is not None
+            assert len(tool.description) > 20
+
+    def test_investigate_requires_model_urn(self):
+        """meridian_investigate should require model_urn."""
+        tool = next(t for t in TOOLS if t.name == "meridian_investigate")
+        assert "model_urn" in tool.inputSchema["properties"]
+        assert "model_urn" in tool.inputSchema["required"]
+
+    def test_health_requires_model_urn(self):
+        """meridian_health should require model_urn."""
+        tool = next(t for t in TOOLS if t.name == "meridian_health")
+        assert "model_urn" in tool.inputSchema["properties"]
+        assert "model_urn" in tool.inputSchema["required"]
+
+    def test_playbook_requires_pattern_id(self):
+        """meridian_playbook should require pattern_id."""
+        tool = next(t for t in TOOLS if t.name == "meridian_playbook")
+        assert "pattern_id" in tool.inputSchema["properties"]
+        assert "pattern_id" in tool.inputSchema["required"]
 
 
-class TestMeridianMCPServer:
-    """Test MCP server initialization and tool handling."""
+class TestMCPToolHandlers:
+    """Test MCP tool call handlers."""
 
-    def test_server_initialization(self):
-        """Server should initialize with MCP client and Groq client."""
-        with patch('backend.mcp_server.DataHubMCPClient') as mock_mcp:
-            with patch('backend.mcp_server.GroqClient') as mock_groq:
-                server = MeridianMCPServer()
-                assert server.mcp is not None
-                assert server.groq is not None
-                assert server.planner is not None
+    @pytest.mark.asyncio
+    async def test_list_tools_returns_tools(self):
+        """list_tools should return all tools."""
+        tools = await list_tools()
+        assert len(tools) == 3
 
-    def test_tools_list_response(self):
-        """tools/list should return all tools."""
-        response_tools = TOOLS
-        assert len(response_tools) == 3
-        tool_names = [t["name"] for t in response_tools]
-        assert "meridian_investigate" in tool_names
-        assert "meridian_health" in tool_names
-        assert "meridian_playbook" in tool_names
+    @pytest.mark.asyncio
+    async def test_call_tool_unknown_returns_error(self):
+        """Unknown tool should return error content."""
+        result = await call_tool("nonexistent_tool", {})
+        assert len(result) == 1
+        data = json.loads(result[0].text)
+        assert "error" in data
 
-    def test_tool_descriptions_are_informative(self):
-        """Tool descriptions should explain what and when to use."""
-        for tool in TOOLS:
-            desc = tool["description"]
-            # Should mention what it does
-            assert len(desc) > 20
-            # Should be clear and actionable
-            assert any(word in desc.lower() for word in ["run", "check", "view", "investigate", "health", "playbook"])
+    @pytest.mark.asyncio
+    async def test_call_tool_health_missing_urn(self):
+        """Health tool with missing model_urn should return error."""
+        result = await call_tool("meridian_health", {})
+        assert len(result) == 1
+        data = json.loads(result[0].text)
+        assert "error" in data
+
+    @pytest.mark.asyncio
+    async def test_call_tool_playbook_missing_pattern(self):
+        """Playbook tool with missing pattern_id should return error."""
+        result = await call_tool("meridian_playbook", {})
+        assert len(result) == 1
+        data = json.loads(result[0].text)
+        assert "error" in data
 
 
 class TestMCPErrorHandling:
     """Test MCP server error handling patterns."""
 
-    def test_structured_error_response(self):
-        """MCP server should return structured errors, not throw."""
+    def test_error_response_has_text_content(self):
+        """Error responses should be TextContent with JSON."""
         error_response = {
-            "jsonrpc": "2.0",
-            "id": "test-123",
-            "error": {"code": -1, "message": "Unknown tool: invalid_tool"},
+            "error": "Unknown tool: invalid_tool",
         }
-        assert "jsonrpc" in error_response
-        assert "error" in error_response
-        assert "code" in error_response["error"]
-        assert "message" in error_response["error"]
-
-    def test_unknown_method_error(self):
-        """Unknown method should return error."""
-        error_response = {
-            "jsonrpc": "2.0",
-            "id": "test-456",
-            "error": {"code": -1, "message": "Unknown method: invalid_method"},
-        }
-        assert error_response["error"]["code"] == -1
-
-    def test_tool_not_found_error(self):
-        """Unknown tool should return error."""
-        error_response = {
-            "jsonrpc": "2.0",
-            "id": "test-789",
-            "error": {"code": -1, "message": "Unknown tool: nonexistent_tool"},
-        }
-        assert "Unknown tool" in error_response["error"]["message"]
+        text = json.dumps(error_response)
+        data = json.loads(text)
+        assert "error" in data

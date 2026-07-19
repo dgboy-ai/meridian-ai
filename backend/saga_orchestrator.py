@@ -9,6 +9,7 @@ Based on the Agentic Saga Pattern from MERIDIAN_MASTER_STRATEGY.md:
 "Without this, a failed investigation can leave DataHub in a partially-written
 inconsistent state."
 """
+import asyncio
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
@@ -258,7 +259,3 @@ class InvestigationSaga:
         # 1. Remove audit records from compliance engine
         # 2. Remove Technical File from Knowledge Base
         # For now, we log the compensation
-
-
-# Required for async functions in SagaStep
-import asyncio

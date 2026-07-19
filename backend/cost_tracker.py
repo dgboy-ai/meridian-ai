@@ -166,9 +166,9 @@ class CostTracker:
         investigation.end_time = time.time()
         investigation.manual_time_minutes = manual_time_minutes
 
-        # Compute actual investigation time
-        actual_time_ms = investigation.end_time - investigation.start_time
-        actual_time_minutes = actual_time_ms / 60000.0
+        # Compute actual investigation time (time.time() returns seconds)
+        actual_time_seconds = investigation.end_time - investigation.start_time
+        actual_time_minutes = actual_time_seconds / 60.0
 
         # Compute time saved
         investigation.time_saved_minutes = max(0, manual_time_minutes - actual_time_minutes)

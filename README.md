@@ -9,7 +9,7 @@ And the next one takes 3.
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue)](#)
 [![DataHub Tools: 9](https://img.shields.io/badge/DataHub%20Tools-9-purple)](#)
 [![Workers: 21](https://img.shields.io/badge/Workers-21-orange)](#)
-[![Tests: 548](https://img.shields.io/badge/Tests-548-green)](#)
+[![Tests: 559](https://img.shields.io/badge/Tests-559-green)](#)
 [![DSA: 11](https://img.shields.io/badge/DSA%20Algorithms-11-blue)](#)
 
 ## What is Meridian AI?
@@ -103,11 +103,10 @@ python -m backend.main
 # or
 meridian investigate "urn:li:mlModel:(urn:li:dataPlatform:mlflow,churn_model_v3,PROD)"
 ```
-```
 
 Open http://localhost:9002 (DataHub) + http://localhost:8000/docs (API)
 
-### Option 3: Verify Examples (no running needed)
+### Option 4: Verify Examples (no running needed)
 
 ```bash
 python scripts/regenerate_examples.py
@@ -123,7 +122,7 @@ python scripts/regenerate_examples.py
 +-------------------+-------------------------------+
                     |
 +-------------------v-------------------------------+
-|              PLANNER AGENT (14 workers)             |
+|              PLANNER AGENT (21 workers)             |
 |  Detects -> Diagnoses -> Remediates -> Learns      |
 |  AutonomyManager gates each worker                 |
 |  HealthScore computed from real worker confidence   |

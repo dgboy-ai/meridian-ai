@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
+import InvestigateButton from '../../../components/InvestigateButton'
 
 // Use relative URLs - Next.js rewrites proxy to backend
 const API = ''
@@ -77,7 +78,10 @@ export default function IncidentPage() {
   const [activeTab, setActiveTab] = useState<'timeline' | 'blast' | 'writeback'>('timeline')
   const [streamingEvents, setStreamingEvents] = useState<TimelineEvent[]>([])
   const [isStreaming, setIsStreaming] = useState(false)
+  const [streamError, setStreamError] = useState('')
   const eventSourceRef = useRef<EventSource | null>(null)
+  const retryCountRef = useRef(0)
+  const MAX_RETRIES = 3
 
   useEffect(() => {
     fetch(`${API}/api/incidents/${params.id}`)
@@ -93,28 +97,51 @@ export default function IncidentPage() {
 
     setStreamingEvents([])
     setIsStreaming(true)
+    setStreamError('')
+    retryCountRef.current = 0
 
-    const es = new EventSource(`${API}/stream/replay?incident_id=${params.id}&delay=0.6`)
-    eventSourceRef.current = es
+    const connect = () => {
+      const es = new EventSource(`${API}/stream/replay?incident_id=${params.id}&delay=0.6`)
+      eventSourceRef.current = es
 
-    es.onmessage = (event) => {
-      if (event.data === '[DONE]') {
-        es.close()
-        setIsStreaming(false)
-        return
-      }
-      try {
-        const data = JSON.parse(event.data)
-        if (data.step !== 'complete') {
-          setStreamingEvents(prev => [...prev, data])
+      es.onmessage = (event) => {
+        // SSE heartbeat comments start with ':' and are ignored by EventSource
+        // but [DONE] comes through as a message
+        if (event.data === '[DONE]') {
+          es.close()
+          setIsStreaming(false)
+          retryCountRef.current = 0
+          return
         }
-      } catch {}
+        try {
+          const data = JSON.parse(event.data)
+          // Skip heartbeat/error events with no step
+          if (data.step && data.step !== 'complete' && data.step !== 'error') {
+            setStreamingEvents(prev => [...prev, data])
+            retryCountRef.current = 0 // Reset retry on successful event
+          }
+          if (data.step === 'error') {
+            setStreamError(data.error || 'Stream error')
+          }
+        } catch {}
+      }
+
+      es.onerror = () => {
+        es.close()
+        // Auto-retry with exponential backoff
+        if (retryCountRef.current < MAX_RETRIES) {
+          retryCountRef.current++
+          const delay = Math.min(1000 * Math.pow(2, retryCountRef.current), 8000)
+          setStreamError(`Connection lost. Retrying in ${delay / 1000}s... (${retryCountRef.current}/${MAX_RETRIES})`)
+          setTimeout(connect, delay)
+        } else {
+          setIsStreaming(false)
+          setStreamError('Connection failed after retries. Check if the backend is running.')
+        }
+      }
     }
 
-    es.onerror = () => {
-      es.close()
-      setIsStreaming(false)
-    }
+    connect()
   }, [params.id])
 
   useEffect(() => {
@@ -142,7 +169,7 @@ export default function IncidentPage() {
 
   return (
     <Main>
-      <Header incident={incident} onReplay={startReplay} isStreaming={isStreaming} />
+      <Header incident={incident} onReplay={startReplay} isStreaming={isStreaming} streamError={streamError} />
       <TabBar active={activeTab} onChange={setActiveTab} />
       {activeTab === 'timeline' && <Timeline events={displayTimeline} isStreaming={isStreaming} />}
       {activeTab === 'blast' && <BlastRadius radius={incident.blast_radius} />}
@@ -164,13 +191,16 @@ function LoadingPulse() {
   )
 }
 
-function Header({ incident, onReplay, isStreaming }: { incident: Incident; onReplay: () => void; isStreaming: boolean }) {
+function Header({ incident, onReplay, isStreaming, streamError }: { incident: Incident; onReplay: () => void; isStreaming: boolean; streamError: string }) {
   const mins = Math.round(incident.duration_seconds / 60)
   return (
     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-      <a href="/" style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px', display: 'block', textDecoration: 'none' }}>
-        ← All Investigations
-      </a>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <a href="/" style={{ fontSize: '13px', color: 'var(--text-muted)', textDecoration: 'none' }}>
+          ← All Investigations
+        </a>
+        <InvestigateButton />
+      </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
         <h1 style={{ fontSize: '28px', fontWeight: 700 }}>
           <span style={{ color: 'var(--accent-blue)' }}>#{incident.id}</span> {incident.title}
@@ -183,7 +213,7 @@ function Header({ incident, onReplay, isStreaming }: { incident: Incident; onRep
             className="btn-glass"
             style={{ padding: '8px 16px', fontSize: '12px', cursor: isStreaming ? 'not-allowed' : 'pointer', opacity: isStreaming ? 0.5 : 1 }}
           >
-            {isStreaming ? '⏳ Replaying...' : '▶ Replay Investigation'}
+            {isStreaming ? 'Replaying...' : 'Replay Investigation'}
           </button>
         </div>
       </div>
@@ -193,6 +223,15 @@ function Header({ incident, onReplay, isStreaming }: { incident: Incident; onRep
         <span>Duration: {mins} minutes</span>
         {incident.pattern_id && <span>Pattern: {incident.pattern_id}</span>}
       </div>
+      {streamError && (
+        <div style={{
+          marginTop: '12px', padding: '10px 14px', borderRadius: '8px',
+          background: 'rgba(244, 63, 94, 0.08)', border: '1px solid rgba(244, 63, 94, 0.2)',
+          fontSize: '13px', color: '#f43f5e',
+        }}>
+          {streamError}
+        </div>
+      )}
     </motion.div>
   )
 }

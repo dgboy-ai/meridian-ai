@@ -12,10 +12,10 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Optional
 
-logger = logging.getLogger("meridian-ai.reflexion")
-
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
+
+logger = logging.getLogger("meridian-ai.reflexion")
 
 
 @dataclass
@@ -134,7 +134,7 @@ Make it concise and actionable."""},
                 replace_existing=True,
             )
         except Exception as e:
-            print(f"Failed to write playbook: {e}")
+            logger.error(f"Failed to write playbook: {e}")
 
         return ReflexionResult(
             incident_id=incident_id,

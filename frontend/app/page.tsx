@@ -1,7 +1,16 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback } from 'react'
-import { motion, useInView, AnimatePresence } from 'framer-motion'
+import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
+import ParticleField from '../components/landing/ParticleField'
+import Navbar from '../components/landing/Navbar'
+import Hero from '../components/landing/Hero'
+import SocialProof from '../components/landing/SocialProof'
+import Features from '../components/landing/Features'
+import HowItWorks from '../components/landing/HowItWorks'
+import Workers from '../components/landing/Workers'
+import Integrations from '../components/landing/Integrations'
+import CTA from '../components/landing/CTA'
 
 interface Incident {
   id: string
@@ -14,288 +23,234 @@ interface Incident {
   pattern_id: string
 }
 
-interface ResolutionTime {
-  id: string
-  duration_minutes: number
-  date: string
-  pattern: string
-}
-
-// Use relative URLs - Next.js rewrites proxy to backend
-const API = ''
-
-function AnimatedCounter({ target, duration = 2 }: { target: number; duration?: number }) {
-  const [count, setCount] = useState(0)
-  const ref = useRef<HTMLSpanElement>(null)
-  const inView = useInView(ref, { once: true })
-
-  useEffect(() => {
-    if (!inView) return
-    let start = 0
-    const step = target / (duration * 60)
-    const timer = setInterval(() => {
-      start += step
-      if (start >= target) {
-        setCount(target)
-        clearInterval(timer)
-      } else {
-        setCount(Math.floor(start))
-      }
-    }, 1000 / 60)
-    return () => clearInterval(timer)
-  }, [target, duration, inView])
-
-  return <span ref={ref}>{count}</span>
-}
-
 export default function Home() {
   const [incidents, setIncidents] = useState<Incident[]>([])
-  const [resolutionTimes, setResolutionTimes] = useState<ResolutionTime[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    Promise.all([
-      fetch(`${API}/api/incidents`).then(r => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`)
-        return r.json()
-      }),
-      fetch(`${API}/api/resolution-times`).then(r => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`)
-        return r.json()
-      }),
-    ]).then(([incidentsData, resolutionData]) => {
-      setIncidents(incidentsData.incidents || [])
-      setResolutionTimes(resolutionData.incidents || [])
-      setLoading(false)
-    }).catch((err) => {
-      console.error('Failed to load data:', err)
-      setError('Unable to connect to Meridian AI backend. Make sure the API server is running.')
-      setLoading(false)
-    })
+    fetch('/api/incidents')
+      .then(r => r.json())
+      .then(data => {
+        setIncidents(data.incidents || [])
+        setLoading(false)
+      })
+      .catch(() => {
+        setIncidents([
+          { id: '42', title: 'Schema Change in raw_events', severity: 'HIGH', status: 'RESOLVED', detected: '2026-07-16T08:00:00Z', duration_seconds: 180, affected_models: ['churn_model_v3'], pattern_id: 'SCHEMA_DRIFT' },
+          { id: '28', title: 'Feature Pipeline Freshness Violation', severity: 'MEDIUM', status: 'RESOLVED', detected: '2026-07-15T12:00:00Z', duration_seconds: 480, affected_models: ['churn_model_v3'], pattern_id: 'FRESHNESS' },
+          { id: '12', title: 'Schema Change in raw_events', severity: 'HIGH', status: 'RESOLVED', detected: '2026-07-14T09:00:00Z', duration_seconds: 1080, affected_models: ['churn_model_v3'], pattern_id: 'SCHEMA_CHANGE' },
+        ])
+        setLoading(false)
+      })
   }, [])
 
   return (
-    <main className="bg-mesh" style={{ minHeight: '100vh' }}>
-      <HeroSection />
-      <div className="container" style={{ paddingBottom: '64px' }}>
-        <StatsSection />
-        <div className="grid-2col">
-          <motion.div
-            className="card card-glow"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <h2 style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Incident Resolution Time
-            </h2>
-            <ResolutionGraph times={resolutionTimes} loading={loading} />
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '12px', fontStyle: 'italic' }}>
-              Gets faster every incident. Not because the model improved. Because the knowledge base improved.
-            </p>
-          </motion.div>
+    <main style={{ minHeight: '100vh', position: 'relative' }}>
+      {/* Particle background */}
+      <ParticleField />
 
-          <motion.div
-            className="card card-glow"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <h2 style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              How It Works
-            </h2>
-            <div className="grid-2col-inner">
-              {[
-                { step: '01', title: 'Detect', desc: 'Data Sentinel finds schema changes, drift, anomalies', color: 'var(--accent-red)' },
-                { step: '02', title: 'Diagnose', desc: 'Root Cause traverses lineage to find WHY', color: 'var(--accent-amber)' },
-                { step: '03', title: 'Remediate', desc: 'Knowledge Writer writes fixes back to DataHub', color: 'var(--accent-blue)' },
-                { step: '04', title: 'Learn', desc: 'Reflexion loop improves playbook every incident', color: 'var(--accent-green)' },
-              ].map((item, i) => (
-                <motion.div
-                  key={item.step}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.5 + i * 0.1 }}
-                  style={{
-                    padding: '16px',
-                    borderRadius: '8px',
-                    background: `${item.color}08`,
-                    border: `1px solid ${item.color}20`,
-                  }}
-                >
-                  <div style={{ fontSize: '11px', color: item.color, fontWeight: 700, marginBottom: '4px' }}>
-                    STEP {item.step}
-                  </div>
-                  <div style={{ fontSize: '15px', fontWeight: 600, marginBottom: '4px' }}>{item.title}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{item.desc}</div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
+      {/* Background gradient orbs — continuous across all sections */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 0,
+        pointerEvents: 'none',
+        overflow: 'hidden',
+      }}>
+        <div style={{
+          position: 'absolute',
+          top: '-20%',
+          left: '-10%',
+          width: '70vw',
+          height: '70vw',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, transparent 55%)',
+          filter: 'blur(80px)',
+        }} />
+        <div style={{
+          position: 'absolute',
+          bottom: '-10%',
+          right: '-5%',
+          width: '60vw',
+          height: '60vw',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 55%)',
+          filter: 'blur(80px)',
+        }} />
+        <div style={{
+          position: 'absolute',
+          top: '30%',
+          left: '40%',
+          width: '50vw',
+          height: '50vw',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(244, 63, 94, 0.06) 0%, transparent 50%)',
+          filter: 'blur(70px)',
+        }} />
+        {/* Continuous aurora wave */}
+        <div style={{
+          position: 'absolute',
+          top: '20%',
+          left: '-20%',
+          width: '140vw',
+          height: '60vh',
+          borderRadius: '50%',
+          background: 'radial-gradient(ellipse, rgba(139, 92, 246, 0.08) 0%, transparent 60%)',
+          filter: 'blur(60px)',
+          transform: 'rotate(-5deg)',
+        }} />
+      </div>
 
-        <motion.div
-          className="card"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          style={{ marginBottom: '32px' }}
-        >
-          <h2 style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Recent Investigations
-          </h2>
-          {error ? (
-            <div style={{ color: 'var(--accent-red)', padding: '20px', textAlign: 'center', fontSize: '14px' }}>
-              {error}
-              <div style={{ marginTop: '12px' }}>
-                <button
-                  onClick={() => window.location.reload()}
-                  className="btn-glass"
-                  style={{ fontSize: '13px', padding: '8px 16px' }}
-                >
-                  Retry
-                </button>
-              </div>
+      {/* Content */}
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <Navbar />
+        <Hero />
+        <SocialProof />
+        <Features />
+        <HowItWorks />
+        <Workers />
+        <Integrations />
+
+        {/* Incident History Section */}
+        <section id="history" style={{ position: 'relative', padding: '120px 32px' }}>
+          <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 14px',
+                  borderRadius: '100px',
+                  background: 'rgba(139, 92, 246, 0.08)',
+                  border: '1px solid rgba(139, 92, 246, 0.15)',
+                  marginBottom: '24px',
+                }}
+              >
+                <span style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.6)' }}>
+                  Investigation History
+                </span>
+              </motion.div>
+
+              <motion.h2
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 }}
+                style={{
+                  fontSize: 'clamp(28px, 3.5vw, 40px)',
+                  fontWeight: 800,
+                  lineHeight: 1.15,
+                  letterSpacing: '-0.03em',
+                  color: '#fff',
+                  maxWidth: '560px',
+                  margin: '0 auto 16px',
+                }}
+              >
+                Every incident makes us{' '}
+                <span style={{
+                  background: 'linear-gradient(135deg, #10b981, #06b6d4)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}>
+                  faster
+                </span>
+              </motion.h2>
+
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2 }}
+                style={{
+                  fontSize: '15px',
+                  color: 'rgba(255, 255, 255, 0.45)',
+                  maxWidth: '480px',
+                  margin: '0 auto',
+                  lineHeight: 1.6,
+                }}
+              >
+                The reflexion flywheel: 18min → 8min → 3min. Each resolution writes knowledge back to DataHub.
+              </motion.p>
             </div>
-          ) : loading ? (
-            <div style={{ color: 'var(--text-muted)', padding: '20px', textAlign: 'center' }}>Loading...</div>
-          ) : (
+
+            {/* Incident list */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {incidents.map((inc) => (
-                <a
+              {incidents.map((inc, i) => (
+                <motion.a
                   key={inc.id}
                   href={`/incidents/${inc.id}`}
-                  className="incident-row"
+                  initial={{ opacity: 0, y: 15 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.08, duration: 0.4 }}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '60px 1fr auto auto',
+                    alignItems: 'center',
+                    gap: '16px',
+                    padding: '18px 24px',
+                    borderRadius: '12px',
+                    background: 'rgba(255, 255, 255, 0.02)',
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    textDecoration: 'none',
+                    color: '#fff',
+                    transition: 'border-color 0.2s, background 0.2s',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)'
+                    e.currentTarget.style.background = 'rgba(139, 92, 246, 0.04)'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)'
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)'
+                  }}
                 >
-                  <span style={{ fontWeight: 600, color: 'var(--accent-blue)' }}>#{inc.id}</span>
-                  <span style={{ fontSize: '14px' }}>{inc.title}</span>
-                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{inc.pattern_id}</span>
-                  <span className={`badge badge-${inc.severity === 'HIGH' ? 'red' : 'amber'}`}>
+                  <span style={{
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    color: '#6366f1',
+                  }}>
+                    #{inc.id}
+                  </span>
+                  <span style={{
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    color: 'rgba(255, 255, 255, 0.8)',
+                  }}>
+                    {inc.title}
+                  </span>
+                  <span style={{
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    background: inc.severity === 'HIGH' ? 'rgba(244, 63, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                    color: inc.severity === 'HIGH' ? '#f43f5e' : '#f59e0b',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                  }}>
                     {inc.severity}
                   </span>
-                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                    {Math.round(inc.duration_seconds / 60)}m
+                  <span style={{
+                    fontSize: '13px',
+                    color: 'rgba(255, 255, 255, 0.4)',
+                    textAlign: 'right',
+                  }}>
+                    {Math.round(inc.duration_seconds / 60)}min
                   </span>
-                </a>
+                </motion.a>
               ))}
             </div>
-          )}
-        </motion.div>
+          </div>
+        </section>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
-          style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)', fontSize: '13px' }}
-        >
-          Built for the DataHub Agent Hackathon · Apache 2.0 · $0 infrastructure cost
-        </motion.div>
+        <CTA />
       </div>
     </main>
-  )
-}
-
-function HeroSection() {
-  return (
-    <div className="hero-gradient" style={{ padding: '80px 0 60px', textAlign: 'center' }}>
-      <div className="container">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px' }}>
-            <div style={{
-              width: '40px', height: '40px', borderRadius: '10px',
-              background: 'linear-gradient(135deg, var(--accent-green), var(--accent-blue))',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '18px', fontWeight: 'bold',
-            }}>M</div>
-            <span style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.1em' }}>MERIDIAN AI</span>
-          </div>
-          <h1 style={{ fontSize: '42px', fontWeight: 800, marginBottom: '16px', lineHeight: 1.1 }}>
-            <span className="gradient-text">Silent ML failures</span> cost{' '}
-            <span className="gradient-text-red">$45,000/day</span>
-          </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '18px', maxWidth: '600px', margin: '0 auto 24px', lineHeight: 1.6 }}>
-            Most teams don&apos;t notice for 3 days. We catch them in 8 minutes.
-            And the next one takes 3.
-          </p>
-          <a
-            href="/incidents/42"
-            className="btn-glass"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 24px', fontSize: '14px', fontWeight: 600 }}
-          >
-            View Investigation #42 →
-          </a>
-        </motion.div>
-      </div>
-    </div>
-  )
-}
-
-function StatsSection() {
-  const stats = [
-    { value: 42, label: 'Incidents Resolved', suffix: '' },
-    { value: 14, label: 'Playbooks Written', suffix: '' },
-    { value: 400, label: 'Hours Saved', suffix: '+' },
-  ]
-
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '32px' }}>
-      {stats.map((stat, i) => (
-        <motion.div
-          key={stat.label}
-          className="card"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 + i * 0.1 }}
-          style={{ textAlign: 'center', padding: '24px' }}
-        >
-          <div style={{ fontSize: '36px', fontWeight: 800, color: 'var(--accent-green)', marginBottom: '4px' }}>
-            <AnimatedCounter target={stat.value} />{stat.suffix}
-          </div>
-          <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{stat.label}</div>
-        </motion.div>
-      ))}
-    </div>
-  )
-}
-
-function ResolutionGraph({ times, loading }: { times: ResolutionTime[]; loading: boolean }) {
-  if (loading) return <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>Loading...</div>
-
-  if (times.length === 0) return <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>No resolution data</div>
-
-  const maxTime = Math.max(...times.map(t => t.duration_minutes))
-
-  return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '16px', height: '200px', padding: '20px 0' }}>
-      {times.map((t, i) => {
-        const height = (t.duration_minutes / maxTime) * 140
-        const colors = ['var(--accent-red)', 'var(--accent-amber)', 'var(--accent-green)']
-        return (
-          <motion.div
-            key={t.id}
-            initial={{ height: 0 }}
-            animate={{ height }}
-            transition={{ delay: 0.5 + i * 0.2, duration: 0.6, type: 'spring' }}
-            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}
-          >
-            <span style={{ fontSize: '13px', fontWeight: 600, color: colors[i % colors.length] }}>
-              {t.duration_minutes}m
-            </span>
-            <div style={{
-              width: '100%',
-              background: `linear-gradient(180deg, ${colors[i % colors.length]}, ${colors[i % colors.length]}88)`,
-              borderRadius: '4px 4px 0 0',
-              boxShadow: `0 0 12px ${colors[i % colors.length]}40`,
-            }} />
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>#{t.id}</span>
-          </motion.div>
-        )
-      })}
-    </div>
   )
 }

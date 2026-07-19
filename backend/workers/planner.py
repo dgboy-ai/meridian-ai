@@ -11,6 +11,8 @@ Fixes applied:
 - Integrates MLMetadataIntegrator for ML-specific entity queries
 - Integrates AgenticCircuitBreaker for agent reasoning health
 """
+import os
+import re
 import time
 import logging
 from datetime import datetime, timezone
@@ -161,7 +163,7 @@ class PlannerAgent:
         # Derive feature table URN from lineage
         feature_table_urn = None
         try:
-            for d in lineage.get("downstream", []) if 'lineage' in dir() else []:
+            for d in lineage.get("downstream", []):
                 urn = d.get("urn", "")
                 if "feature_store" in urn or "feature" in urn.lower():
                     feature_table_urn = urn
@@ -193,7 +195,6 @@ class PlannerAgent:
                     # Parse schema diff description to extract changed columns
                     # Description format: "Schema diff for {entity}: {summary}"
                     # Summary contains type changes like "user_age: INT→STRING"
-                    import re
                     type_changes = re.findall(r'(\w+):\s*(\w+)→(\w+)', ev_item.description)
                     for col_name, before_type, after_type in type_changes:
                         changed_columns.append({
@@ -217,9 +218,11 @@ class PlannerAgent:
             skew_evidence.confidence,
             leakage_evidence.confidence,
         ]
+        # Extract model name from URN (e.g., "churn_model_v3" from "...,churn_model_v3,PROD)")
+        model_name = model_urns[0].split(",")[-2] if model_urns and "," in model_urns[0] else "unknown"
         health_score = self.health_calculator.calculate_from_workers(
             model_urn=model_urns[0],
-            model_name="churn_model_v3",
+            model_name=model_name,
             data_quality=1.0 - (len(sentinel_evidence.evidence) * 0.1),
             drift_magnitude=drift_evidence.confidence,
             prediction_quality=root_cause_evidence.confidence,
@@ -291,9 +294,12 @@ class PlannerAgent:
 
         # Lifecycle governance — use real health score
         yield {"step": "lifecycle_governance", "status": "running", "timestamp": datetime.now(timezone.utc).isoformat(), "message": "Evaluating model lifecycle health..."}
+        # Use second model from investigation if available, else first
+        lifecycle_model_urn = model_urns[1] if len(model_urns) > 1 else model_urns[0]
+        lifecycle_model_name = lifecycle_model_urn.split(",")[-2] if "," in lifecycle_model_urn else "unknown"
         lifecycle_evidence = await self.lifecycle.evaluate(
-            model_urn="urn:li:mlModel:(urn:li:dataPlatform:mlflow,ltv_model_v2,PROD)",
-            model_name="ltv_model_v2",
+            model_urn=lifecycle_model_urn,
+            model_name=lifecycle_model_name,
             health_score=health_score.score,
             consecutive_failures=3,
             pattern_id="freshness-violation",
@@ -374,13 +380,11 @@ class PlannerAgent:
         if root_cause_evidence.business_impact:
             rev_str = root_cause_evidence.business_impact.estimated_revenue_at_risk or ""
             # Parse "$45,000/day" -> 45000
-            import re
             match = re.search(r'\$?([\d,]+)', rev_str)
             if match:
                 revenue_at_risk = float(match.group(1).replace(",", ""))
 
         # Average manual investigation time - configurable via env var
-        import os
         manual_time = float(os.getenv("MANUAL_INVESTIGATION_TIME_MINUTES", "45.0"))
 
         investigation_cost = self.cost_tracker.end_investigation(
