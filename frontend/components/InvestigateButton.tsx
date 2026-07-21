@@ -133,7 +133,7 @@ export default function InvestigateButton({ onInvestigationStarted }: Props) {
                     New Investigation
                   </h2>
                   <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>
-                    Select a dataset to investigate. 21 workers will fire.
+                    Select a dataset to investigate. 18 workers will fire.
                   </p>
                 </div>
                 <button
@@ -261,7 +261,7 @@ export default function InvestigateButton({ onInvestigationStarted }: Props) {
               </button>
 
               <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)', textAlign: 'center', marginTop: '12px' }}>
-                21 workers will fire. Results written to DataHub. ~30 seconds in mock mode.
+                18 workers will fire. Results written to DataHub. ~30 seconds in mock mode.
               </p>
             </motion.div>
           </motion.div>

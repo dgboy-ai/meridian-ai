@@ -29,35 +29,37 @@ export default function ModelsPage() {
   const [checkingHealth, setCheckingHealth] = useState(false)
   const [healthResult, setHealthResult] = useState<any>(null)
 
+  const MOCK_MODELS: ModelHealth[] = [
+    {
+      urn: 'urn:li:mlModel:(urn:li:dataPlatform:mlflow,churn_model_v3,PROD)',
+      name: 'churn_model_v3', type: 'mlModel', platform: 'mlflow',
+      owner: 'ml-platform-team', tags: ['production', 'churn'],
+      health_score: 89, confidence: 0.97, resolved_incidents: 14, resolution_time_minutes: 3.0,
+    },
+    {
+      urn: 'urn:li:mlModel:(urn:li:dataPlatform:mlflow,ltv_model_v2,PROD)',
+      name: 'ltv_model_v2', type: 'mlModel', platform: 'mlflow',
+      owner: 'ml-platform-team', tags: ['production', 'ltv'],
+      health_score: 62, confidence: 0.88, resolved_incidents: 8, resolution_time_minutes: 8.0,
+    },
+    {
+      urn: 'urn:li:mlModel:(urn:li:dataPlatform:mlflow,segment_model_v1,PROD)',
+      name: 'segment_model_v1', type: 'mlModel', platform: 'mlflow',
+      owner: 'ml-platform-team', tags: ['production', 'segmentation'],
+      health_score: 91, confidence: 0.95, resolved_incidents: 3, resolution_time_minutes: 5.0,
+    },
+  ]
+
   useEffect(() => {
     fetch(`${API}/api/health-scores`)
       .then(r => r.json())
       .then(data => {
-        setModels(data.models || [])
+        // Use API data if non-empty, otherwise fall back to mock
+        setModels(data.models && data.models.length > 0 ? data.models : MOCK_MODELS)
         setLoading(false)
       })
       .catch(() => {
-        // Fallback mock data
-        setModels([
-          {
-            urn: 'urn:li:mlModel:(urn:li:dataPlatform:mlflow,churn_model_v3,PROD)',
-            name: 'churn_model_v3', type: 'mlModel', platform: 'mlflow',
-            owner: 'ml-platform-team', tags: ['production', 'churn'],
-            health_score: 89, confidence: 0.97, resolved_incidents: 14, resolution_time_minutes: 3.0,
-          },
-          {
-            urn: 'urn:li:mlModel:(urn:li:dataPlatform:mlflow,ltv_model_v2,PROD)',
-            name: 'ltv_model_v2', type: 'mlModel', platform: 'mlflow',
-            owner: 'ml-platform-team', tags: ['production', 'ltv'],
-            health_score: 62, confidence: 0.88, resolved_incidents: 8, resolution_time_minutes: 8.0,
-          },
-          {
-            urn: 'urn:li:mlModel:(urn:li:dataPlatform:mlflow,segment_model_v1,PROD)',
-            name: 'segment_model_v1', type: 'mlModel', platform: 'mlflow',
-            owner: 'ml-platform-team', tags: ['production', 'segmentation'],
-            health_score: 91, confidence: 0.95, resolved_incidents: 3, resolution_time_minutes: 5.0,
-          },
-        ])
+        setModels(MOCK_MODELS)
         setLoading(false)
       })
   }, [])

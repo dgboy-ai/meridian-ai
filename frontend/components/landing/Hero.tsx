@@ -66,71 +66,14 @@ function TypewriterText() {
   )
 }
 
-function FloatingParticles() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const animRef = useRef<number>(0)
-  const mouseRef = useRef({ x: -100, y: -100 })
-
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')!
-    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight }
-    resize()
-    window.addEventListener('resize', resize)
-    const onMove = (e: MouseEvent) => { mouseRef.current = { x: e.clientX, y: e.clientY } }
-    window.addEventListener('mousemove', onMove)
-
-    const bg = Array.from({ length: 80 }, () => ({
-      x: Math.random() * canvas.width, y: Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 0.3, vy: -Math.random() * 0.4 - 0.1,
-      size: Math.random() * 2.5 + 0.5, opacity: Math.random() * 0.5 + 0.1,
-      hue: 255 + Math.random() * 50,
-    }))
-    const trail: { x: number; y: number; vx: number; vy: number; life: number; max: number; size: number; hue: number }[] = []
-
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-      for (const p of bg) {
-        p.x += p.vx; p.y += p.vy
-        if (p.y < -10) { p.y = canvas.height + 10; p.x = Math.random() * canvas.width }
-        if (p.x < -10) p.x = canvas.width + 10; if (p.x > canvas.width + 10) p.x = -10
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
-        ctx.fillStyle = `hsla(${p.hue}, 70%, 70%, ${p.opacity})`; ctx.fill()
-      }
-      const m = mouseRef.current
-      if (m.x > 0) {
-        for (let i = 0; i < 2; i++) trail.push({
-          x: m.x + (Math.random() - 0.5) * 16, y: m.y + (Math.random() - 0.5) * 16,
-          vx: (Math.random() - 0.5) * 1.5, vy: (Math.random() - 0.5) * 1.5 - 0.8,
-          life: 1, max: 25 + Math.random() * 25, size: Math.random() * 2.5 + 0.8,
-          hue: 260 + Math.random() * 40,
-        })
-      }
-      for (let i = trail.length - 1; i >= 0; i--) {
-        const p = trail[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.02; p.life--
-        if (p.life <= 0) { trail.splice(i, 1); continue }
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.size * (p.life / p.max), 0, Math.PI * 2)
-        ctx.fillStyle = `hsla(${p.hue}, 80%, 70%, ${(p.life / p.max) * 0.5})`; ctx.fill()
-      }
-      if (trail.length > 120) trail.splice(0, trail.length - 120)
-      animRef.current = requestAnimationFrame(animate)
-    }
-    animRef.current = requestAnimationFrame(animate)
-    return () => { cancelAnimationFrame(animRef.current); window.removeEventListener('resize', resize); window.removeEventListener('mousemove', onMove) }
-  }, [])
-
-  return <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 2 }} />
-}
-
 export default function Hero() {
   const ref = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] })
   const y = useTransform(scrollYProgress, [0, 1], [0, 120])
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0])
   const scale = useTransform(scrollYProgress, [0, 0.5], [1, 0.96])
-  const workers = useCountUp(21, 1500, 1200)
-  const tools = useCountUp(12, 1500, 1400)
+  const workers = useCountUp(18, 1500, 1200)
+  const tools = useCountUp(15, 1500, 1400)
 
   return (
     <section ref={ref} id="hero" style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', padding: '100px 32px 60px' }}>
@@ -142,9 +85,9 @@ export default function Hero() {
         <motion.div animate={{ x: ['8%','-12%','18%','8%'], y: ['5%','-10%','6%','5%'], opacity: [0.5,0.75,0.5,0.5] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', top: '-8%', right: '-5%', width: '60vw', height: '70vh', borderRadius: '50% 40% 60% 40% / 40% 60% 40% 60%', background: 'radial-gradient(ellipse, rgba(244,63,94,0.35) 0%, rgba(236,72,153,0.15) 30%, transparent 60%)', filter: 'blur(35px)' }} />
         <motion.div animate={{ x: ['-8%','12%','-5%','-8%'], y: ['6%','-5%','10%','6%'], opacity: [0.3,0.5,0.3,0.3] }} transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', bottom: '-8%', left: '10%', width: '50vw', height: '50vh', borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(6,182,212,0.25) 0%, transparent 50%)', filter: 'blur(40px)' }} />
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(139,92,246,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.05) 1px, transparent 1px)', backgroundSize: '50px 50px', maskImage: 'radial-gradient(ellipse at 55% 50%, black 15%, transparent 55%)', WebkitMaskImage: 'radial-gradient(ellipse at 55% 50%, black 15%, transparent 55%)' }} />
+        {/* Bottom fade — blends hero into next section */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '120px', background: 'linear-gradient(to bottom, transparent, rgba(6,4,13,1))', pointerEvents: 'none' }} />
       </div>
-
-      <FloatingParticles />
 
       {/* Scanning line */}
       <motion.div animate={{ y: ['-100vh','100vh'] }} transition={{ duration: 5, repeat: Infinity, ease: 'linear' }} style={{ position: 'absolute', left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, rgba(139,92,246,0.8) 50%, transparent)', boxShadow: '0 0 40px rgba(139,92,246,0.6), 0 0 80px rgba(139,92,246,0.3)', pointerEvents: 'none', zIndex: 4 }} />
@@ -186,15 +129,15 @@ export default function Hero() {
 
             {/* Subtitle */}
             <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.55 }} style={{ fontSize: '15px', lineHeight: 1.7, color: 'rgba(255,255,255,0.45)', maxWidth: '440px', marginBottom: '24px' }}>
-              Meridian AI — the global reliability platform. Traces incidents across your entire data stack, writes knowledge back to DataHub, and gets faster every time.
+              18 specialized agents investigate ML incidents in parallel, trace root cause through DataHub lineage, and write knowledge back so every future incident resolves faster.
             </motion.p>
 
             {/* CTA */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.65 }} style={{ display: 'flex', gap: '14px', marginBottom: '36px' }} className="hero-cta-row">
               <InvestigateButton />
-              <motion.a href="#features" whileHover={{ scale: 1.03, y: -2, background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.2)' }} whileTap={{ scale: 0.97 }}
+              <motion.a href="/dashboard" whileHover={{ scale: 1.03, y: -2, background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.2)' }} whileTap={{ scale: 0.97 }}
                 style={{ display: 'inline-flex', alignItems: 'center', padding: '16px 32px', borderRadius: '12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.85)', fontSize: '15px', fontWeight: 600, textDecoration: 'none', backdropFilter: 'blur(10px)', transition: 'background 0.3s, border-color 0.3s' }}>
-                See How It Works
+                Open Dashboard
               </motion.a>
             </motion.div>
 

@@ -247,7 +247,7 @@ class RootCause:
             worker_id="root_cause",
             timestamp=now,
             finding=finding,
-            confidence=0.96 if column_traversal and column_traversal.column_dependencies else 0.96,
+            confidence=0.98 if column_traversal and column_traversal.column_dependencies else 0.94,
             severity=Severity.HIGH if len(traversal.affected_models) > 0 else Severity.MEDIUM,
             evidence=evidence_items,
             business_impact=BusinessImpact(

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import ErrorBoundary from '../components/ErrorBoundary'
+import ConsoleLayout from '../components/ConsoleLayout'
 
 export const metadata: Metadata = {
   title: 'Meridian AI — The AI Reliability Engineer',
@@ -17,7 +18,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <ErrorBoundary>{children}</ErrorBoundary>
+        <ErrorBoundary>
+          <ConsoleLayout>{children}</ConsoleLayout>
+        </ErrorBoundary>
       </body>
     </html>
   )

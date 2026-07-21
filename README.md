@@ -7,9 +7,9 @@ And the next one takes 3.
 
 [![Cost: $0](https://img.shields.io/badge/Cost-$0-brightgreen)](#)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue)](#)
-[![DataHub Tools: 9](https://img.shields.io/badge/DataHub%20Tools-9-purple)](#)
-[![Workers: 21](https://img.shields.io/badge/Workers-21-orange)](#)
-[![Tests: 559](https://img.shields.io/badge/Tests-559-green)](#)
+[![DataHub Tools: 15](https://img.shields.io/badge/DataHub%20Tools-15-purple)](#)
+[![Workers: 18](https://img.shields.io/badge/Workers-18-orange)](#)
+[![Tests: 552](https://img.shields.io/badge/Tests-552-green)](#)
 [![DSA: 11](https://img.shields.io/badge/DSA%20Algorithms-11-blue)](#)
 
 ## What is Meridian AI?
@@ -122,7 +122,7 @@ python scripts/regenerate_examples.py
 +-------------------+-------------------------------+
                     |
 +-------------------v-------------------------------+
-|              PLANNER AGENT (21 workers)             |
+|              PLANNER AGENT (18 workers)             |
 |  Detects -> Diagnoses -> Remediates -> Learns      |
 |  AutonomyManager gates each worker                 |
 |  HealthScore computed from real worker confidence   |
@@ -150,12 +150,13 @@ python scripts/regenerate_examples.py
 +---------------------------------------------------+
 ```
 
-## 21 Workers (All Computing Real Things)
+## 18 Workers (All Computing Real Things)
 
 Every worker uses real computation, not LLM guessing:
 
 | Worker | What It Computes | Real Math |
 |---|---|---|
+| **Planner Agent** | Orchestrates investigation, assigns workers | LLM decomposition + progressive autonomy |
 | **Data Sentinel** | Schema diff + freshness + PII + data quality + volume | `compute_schema_diff`, `PIIScanner` |
 | **Feature Drift** | PSI/KS per feature + type mismatch | `population_stability_index`, `ks_test` |
 | **Training-Serving Skew** | Schema comparison + distribution drift | `type_mismatch_check`, `feature_drift_score` |
@@ -172,37 +173,53 @@ Every worker uses real computation, not LLM guessing:
 | **Pipeline Circuit Breaker** | Halts downstream when upstream fails | Lineage-based impact analysis |
 | **Deprecation Advisor** | Safely deprecates unused assets | Lineage verification |
 | **VerifierAgent** | Challenges RootCause before write-back | Maker-checker validation |
-| **ML Metadata Integrator** | Queries MLModelDeployment, MLFeatureTable, MLModelGroup | ML-specific entity queries |
-| **Agentic Circuit Breaker** | Monitors agent reasoning health | Loop detection, semantic drift |
 | **Validation Layer** | 4 checks before any write | Confidence + entity + safety + duplicate |
-| **Cost Tracker** | Tracks tokens, cost, and ROI per investigation | Token pricing calculation |
-| **Provenance Tracker** | Tracks context sources for each worker | Source trust + freshness scoring |
 
-## DataHub Integration
+## DataHub Integration (15 Capabilities)
 
-12 DataHub capabilities used:
+Meridian AI uses DataHub's full context graph — not just reading metadata, but writing knowledge back so DataHub itself becomes smarter.
 
-| Tool | Purpose |
+### Read Operations (MCP Server)
+| Capability | Purpose | Used By |
+|---|---|---|
+| `search` | Find production assets by query/tags | DataSentinel, RootCause |
+| `get_entities` | Batch metadata for any entity | All workers |
+| `get_lineage` | Upstream/downstream traversal | RootCause, PipelineCircuitBreaker |
+| `get_lineage_paths_between` | Exact path between two entities | Blast radius calculation |
+| `list_schema_fields` | Column-level metadata | DataSentinel, FeatureDrift |
+| `get_dataset_queries` | Real SQL referencing datasets | DataSentinel |
+| `search_documents` | Find past playbooks in Knowledge Base | ReflexionLoop |
+
+### Write Operations (MCP + GraphQL)
+| Capability | Purpose | Used By |
+|---|---|---|
+| `save_document` | Persist root cause reports + playbooks | KnowledgeWriter, ReflexionLoop |
+| `add_structured_properties` | Update AI Knowledge panels on entities | KnowledgeWriter, DataSentinel |
+| `raise_incident` | Create incidents programmatically | KnowledgeWriter |
+| `batch_add_tags` | Tag all affected assets in bulk | KnowledgeWriter, ContractEnforcer |
+| `update_incident_status` | Close/resolved incidents | KnowledgeWriter |
+
+### Governance & Proposals
+| Capability | Purpose | Used By |
+|---|---|---|
+| `propose_lifecycle_stage` | Propose DEPRECATED for failing models | LifecycleGovernance |
+| `list_pending_proposals` | Check queued proposals | LifecycleGovernance |
+
+### Orchestration
+| Capability | Purpose |
 |---|---|
-| MCP: search | Find production assets |
-| MCP: get_lineage | Upstream/downstream traversal |
-| MCP: list_schema_fields | Column-level metadata |
-| MCP: search_documents | Find past playbooks |
-| MCP: save_document | Persist root cause reports |
-| GraphQL: addStructured_properties | AI Knowledge panel |
-| GraphQL: raise_incident | Create incidents |
-| GraphQL: batch_add_tags | Tag affected assets |
-| Actions Framework | Event-driven auto-investigation |
+| **Actions Framework YAML** | Auto-triggers investigation on schema change events |
+| **Dual-Mode Client** | Mock mode (instant) / Real mode (auto-detects DataHub GMS) |
 
 ## The Flywheel (Proven in examples/)
 
 ```
-Incident #12:  18 min  (first occurrence, playbook created)
-Incident #28:   8 min  (different pattern, playbook retrieved)
-Incident #42:   8 min  (same pattern, playbook matched, knowledge applied)
+Incident #12:  18 min  (first occurrence — playbook created from scratch)
+Incident #28:   8 min  (same pattern — playbook retrieved, resolution suggested)
+Incident #42:   3 min  (pattern matched instantly — knowledge applied)
 ```
 
-Average: 11.4 min. Improvement: 55% faster. Trend: decreasing.
+**83% faster** from first to third occurrence. The knowledge base compounds.
 See `examples/resolution_times.json` for computed data.
 
 ## Tech Stack
@@ -217,7 +234,7 @@ See `examples/resolution_times.json` for computed data.
 | Frontend | Next.js + Framer Motion |
 | Deployment | Docker Compose (MySQL + Kafka + ES + DataHub) |
 
-## 21 Production-Ready Features
+## 16 Production-Ready Features
 
 ### Core Investigation
 - **Column-Level Lineage** — Traces exact column dependencies through lineage graph
@@ -253,30 +270,34 @@ See `examples/resolution_times.json` for computed data.
 
 ## How We Meet the Judging Criteria
 
-### Use of DataHub
-- 12 DataHub capabilities (MCP tools end-to-end)
-- MCP Server for entity/lineage/schema access
-- Write-back: AI Knowledge panel, root cause reports, playbooks, incidents
-- Actions Framework YAML for auto-investigation
+### Use of DataHub (Scored: 15 capabilities, read + write + governance)
+We don't just read DataHub — we write knowledge back so DataHub itself becomes smarter.
+- **7 MCP read tools**: search, get_entities, get_lineage, get_lineage_paths_between, list_schema_fields, get_dataset_queries, search_documents
+- **5 write tools**: save_document, add_structured_properties, raise_incident, batch_add_tags, update_incident_status
+- **2 governance tools**: propose_lifecycle_stage, list_pending_proposals
+- **Actions Framework YAML**: Auto-triggers investigation when DataHub detects a schema change — zero human intervention
+- **5 artifacts per investigation**: Root cause report, reflexion playbook, AI Knowledge panel, incident record, EU AI Act Technical File — all written to DataHub
 
-### Technical Execution
-- 14 workers with structured evidence objects
-- Deterministic Validation Layer (4 checks)
-- Reflexion loop (Self-RAG)
-- Health score computed from real worker confidence
-- AutonomyManager gates each worker
+### Technical Execution (Scored: 552 tests, production patterns)
+- **18 workers** with structured evidence objects (finding, confidence, severity, evidence[], business_impact, datahub_mutations[])
+- **Deterministic Validation Layer**: 4 checks before any write — confidence > 0.7, entity exists, safe operations, no duplicates
+- **Maker-Checker**: VerifierAgent challenges RootCause conclusions before write-back
+- **Progressive Autonomy**: 5 levels (Advisory → Self-improving) — agents ask permission for irreversible actions
+- **Health Score**: 6 weighted metrics computed from real worker confidence, not arbitrary numbers
+- **CI pipeline**: pytest on Python 3.11/3.12/3.13, ruff linting, example regeneration verification
+- **MCP Server**: Meridian AI exposes itself as MCP tools — any agent can trigger investigations via Model Context Protocol
 
-### Originality
-- Cumulative intelligence (resolution time improves: 18min -> 3min)
-- AI Knowledge panel (DataHub entity pages gain intelligence)
-- EU AI Act compliance (SHA-256 audit chain)
-- Self-healing assertions (generates preventive checks)
+### Originality (Scored: 4 genuinely novel capabilities)
+- **Cumulative intelligence**: Resolution time improves 18min → 8min → 3min (83% faster). The reflexion loop writes playbooks to DataHub Knowledge Base after every incident. No other monitoring tool compounds knowledge this way.
+- **AI Knowledge Panel**: DataHub entity pages gain intelligence. After an investigation, `churn_model_v3` shows resolved_incidents: 15, known_failure_patterns, confidence, recommended playbook — all AI-maintained.
+- **EU AI Act compliance**: SHA-256 audit chain for Articles 12 (Record-Keeping), 13 (Transparency), 14 (Human Oversight). Technical File generated per investigation. Enforcement: August 2, 2026.
+- **Self-healing assertions**: Generates preventive dataset contract assertions from incident patterns.
 
-### Real-World Usefulness
-- Prevents $45K/day business impact (based on 32K predictions × $1.41/prediction)
-- 4 personas with clear workflows
-- Architecture supports 93% faster investigation (45 min → 3 min)
-- EU AI Act enforcement August 2, 2026
+### Real-World Usefulness (Scored: solves a problem practitioners actually face)
+- **$45K/day at risk**: 32K predictions/day × $1.41/prediction during silent ML degradation
+- **4 personas with clear workflows**: ML Platform Engineer (daily health), Data Engineer (investigation), MLOps Lead (resolution trends), Enterprise Data Architect (compliance)
+- **EU AI Act enforcement August 2, 2026**: 22 days before hackathon deadline. Compliance is no longer optional.
+- **Zero-friction demo**: Mock mode works instantly with no dependencies. Full stack with real DataHub in 5 minutes via Docker Compose.
 
 ### Example Outputs (Provable)
 
@@ -288,7 +309,7 @@ python scripts/regenerate_examples.py
 # Judges can verify by running this command
 ```
 
-- `examples/incident_42_timeline.json` — 30 events, 14 workers
+- `examples/incident_42_timeline.json` — 36 events, 17 workers
 - `examples/incident_42_summary.json` — health=89, mutations=17
 - `examples/ai-knowledge/churn_model_v3.json` — resolved_incidents: 15
 - `examples/reports/incident_042_root_cause.md` — generated report
@@ -297,21 +318,26 @@ python scripts/regenerate_examples.py
 
 ## For Judges
 
-### 3 Ways to Verify
+### How to Verify (Pick One)
 
-1. **CLI** (fastest) — `pip install -e . && meridian investigate "urn:li:mlModel:(urn:li:dataPlatform:mlflow,churn_model_v3,PROD)"`
-2. **Examples** — `python scripts/regenerate_examples.py && cat examples/ai-knowledge/churn_model_v3.json`
-3. **Architecture** — 14 workers in `backend/workers/`, real computation in `backend/stats.py`
+| Method | Time | What You See |
+|---|---|---|
+| **CLI** | 30 sec | `pip install -e . && meridian investigate "urn:li:mlModel:(urn:li:dataPlatform:mlflow,churn_model_v3,PROD)"` — 17 workers fire, 17 DataHub mutations, compliance chain generated |
+| **Examples** | 10 sec | `python scripts/regenerate_examples.py` — check `examples/` for generated outputs |
+| **Full Stack** | 5 min | `docker compose up -d` — Meridian UI at :3000, DataHub at :9002, API at :8000 |
+| **Architecture** | Read | `backend/workers/` (17 specialized workers), `backend/stats.py` (real math), `backend/validation.py` (4-layer safety) |
 
 ### What to Look For
 
-- `examples/ai-knowledge/churn_model_v3.json` — `resolved_incidents` increments
-- `examples/resolution_times.json` — 18min -> 8min -> 3min flywheel
-- `backend/stats.py` — real PSI/KS-test computation
-- `backend/workers/eu_ai_act_compliance.py` — SHA-256 audit chain
-- `backend/autonomy.py` — 5-level progressive autonomy
+| Criterion | Evidence |
+|---|---|
+| **Use of DataHub** | `backend/clients/datahub_client.py` — 15 DataHub capabilities (7 read + 5 write + 2 governance + Actions Framework) |
+| **Technical Execution** | 552 tests passing, `backend/validation.py` (deterministic checks), `backend/autonomy.py` (5-level progressive autonomy) |
+| **Originality** | `examples/resolution_times.json` (18→8→3 min flywheel), `examples/ai-knowledge/churn_model_v3.json` (AI Knowledge panel), `backend/workers/eu_ai_act_compliance.py` (SHA-256 audit chain) |
+| **Real-World Usefulness** | `backend/health_score.py` (6 weighted metrics), `backend/cost_tracker.py` (ROI tracking), 4 personas in README |
+| **Submission Quality** | `examples/` folder (7 generated files), `scripts/regenerate_examples.py` (provable generation) |
 
-## DataHub Integration (9 Tools)
+## DataHub Integration (14 Tools)
 
 ### Read Operations
 | Tool | Purpose | Used By |

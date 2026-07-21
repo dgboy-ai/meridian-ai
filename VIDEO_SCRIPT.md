@@ -58,9 +58,9 @@ meridian investigate "urn:li:mlModel:(urn:li:dataPlatform:mlflow,churn_model_v3,
 
 ## The Architecture (1:30 - 2:00)
 
-**[Screen: Architecture diagram showing 21 workers]**
+**[Screen: Architecture diagram showing 18 workers]**
 
-**[Voiceover]:** "21 workers compute real things — PSI, KS-test, schema diff, lineage traversal. No LLM guessing. EU AI Act SHA-256 audit chain. Progressive autonomy — agents ask permission for irreversible actions."
+**[Voiceover]:** "18 workers compute real things — PSI, KS-test, schema diff, lineage traversal. No LLM guessing. EU AI Act SHA-256 audit chain. Progressive autonomy — agents ask permission for irreversible actions."
 
 **[Screen: Code showing real algorithms]**
 
@@ -87,7 +87,7 @@ meridian investigate "urn:li:mlModel:(urn:li:dataPlatform:mlflow,churn_model_v3,
 **[Screen: Terminal showing CLI]**
 ```bash
 meridian investigate "urn:li:mlModel:..."
-# 21 workers fire
+# 18 workers fire
 # 17 DataHub mutations
 # Compliance: Articles 12, 13, 14
 ```
@@ -113,7 +113,7 @@ Real DataHub: DATAHUB_MOCK=false
 | 0:30 | Investigation running in terminal | "This actually works" |
 | 1:00 | 4 artifacts written to DataHub | "Write-back is real" |
 | 1:00 | Resolution time graph | "The flywheel is provable" |
-| 1:30 | Architecture with 21 workers | "Technical depth is genuine" |
+| 1:30 | Architecture with 18 workers | "Technical depth is genuine" |
 | 2:00 | Real algorithms in code | "No LLM guessing" |
 | 2:30 | One command to run | "I can use this immediately" |
 

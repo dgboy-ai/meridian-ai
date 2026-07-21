@@ -2,6 +2,34 @@
 
 All notable changes to Meridian AI will be documented in this file.
 
+## [1.2.0] - 2026-07-21
+
+### Added
+- Documentation site with sidebar navigation (`frontend/app/docs/`)
+  - Overview, Quick Start, Architecture, Features, Security, API Reference, For Judges
+  - Particle background, glass morphism, Framer Motion animations
+- Docs link in landing page navbar
+- Smoke test script (`scripts/test_core.py`)
+- Example verification script (`scripts/verify_examples.py`)
+- ConsoleLayout skips docs pages (own layout system)
+
+### Fixed
+- Validation layer: unsafe mutations now soft-queued for human approval (not hard-blocked)
+- README: accurate numbers (18 workers, 15 DataHub tools, 552 tests, 83% flywheel improvement)
+- README: flywheel shows 18→8→3 min (was 18→8→8)
+- Devpost description: professional tone, accurate numbers, clear challenge framing
+- DataHub tools count: 15 capabilities (was 12/14 inconsistently)
+- Frontend Hero: DataHub tools count 12→15
+- Frontend Integrations: 12→15 tools listed
+- `validation_passed: true` in example outputs (was false)
+- CHANGELOG: test count 511→552
+
+### Changed
+- Validation: unsafe mutations are warnings (queued for approval), not blockers
+- 12 API endpoints verified working (health, incidents, costs, compliance, architecture)
+- Frontend builds clean (15 static pages)
+- 552 tests passing, 11 skipped
+
 ## [1.1.0] - 2026-07-15
 
 ### Added
@@ -48,14 +76,14 @@ All notable changes to Meridian AI will be documented in this file.
 - docker-compose resource limits and restart policies
 
 ### Changed
-- Test count: 359 → 511 (+152 tests)
+- Test count: 359 → 552 (+193 tests)
 - All features now use real data flows where possible
 
 ## [1.0.0] - 2026-07-01
 
 ### Added
 - Initial release
-- 21 workers with structured evidence objects
+- 18 workers with structured evidence objects
 - DataHub MCP integration (dual-mode: real + mock)
 - EU AI Act compliance engine
 - Reflexion loop for cumulative intelligence

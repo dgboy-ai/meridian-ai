@@ -11,6 +11,7 @@ import HowItWorks from '../components/landing/HowItWorks'
 import Workers from '../components/landing/Workers'
 import Integrations from '../components/landing/Integrations'
 import CTA from '../components/landing/CTA'
+import Footer from '../components/landing/Footer'
 
 interface Incident {
   id: string
@@ -250,6 +251,7 @@ export default function Home() {
         </section>
 
         <CTA />
+        <Footer />
       </div>
     </main>
   )

@@ -122,11 +122,120 @@
         "ai_knowledge_panel": {"entity": "churn_model_v3", "status": "updated", "health_score": 70, "resolved_incidents": 1},
         "playbook": {"title": "Playbook: Schema Change to Model Degradation", "status": "created"}
       }
+    },
+    "55": {
+      "id": "55",
+      "title": "Feature Drift in Fraud Detection Model",
+      "severity": "HIGH",
+      "status": "RESOLVED",
+      "detected": "2026-07-18T11:05:00Z",
+      "resolved": "2026-07-18T11:10:00Z",
+      "duration_seconds": 300,
+      "root_cause": "Feature drift in transaction_amount distribution — PSI=0.34 (threshold 0.2). Fraud patterns shifted after promotion event caused unusual spending behavior.",
+      "pattern_id": "feature-drift-psi",
+      "affected_models": ["fraud_detection_v1"],
+      "timeline": [
+        {"time": "11:05:00", "step": "planner", "status": "started", "finding": "Investigation initiated for incident #55", "confidence": 1.0, "message": "Feature drift alert from fraud_detection_v1"},
+        {"time": "11:05:02", "step": "data_sentinel", "status": "completed", "finding": "DATA QUALITY: transaction_amount distribution shifted — PSI=0.34", "confidence": 0.93, "severity": "high", "message": "Schema OK but distribution drift detected in 3 features"},
+        {"time": "11:05:04", "step": "feature_drift", "status": "completed", "finding": "FEATURE DRIFT: transaction_amount PSI=0.34, amount_bucket PSI=0.28, time_of_day PSI=0.12", "confidence": 0.95, "message": "PSI/KS computed for 5 numeric features, 2 drifted"},
+        {"time": "11:05:06", "step": "training_serving_skew", "status": "completed", "finding": "TRAINING-SERVING SKEW: transaction_amount distribution skew=0.31", "confidence": 0.91, "message": "Compared serving distribution against training baseline"},
+        {"time": "11:05:08", "step": "root_cause", "status": "completed", "finding": "ROOT CAUSE: fraud_detection_v1 — feature drift triggered by promotion event. Revenue at risk: $200,000/day.", "confidence": 0.96, "message": "Lineage: raw_transactions → feature_pipeline → fraud_detection_v1"},
+        {"time": "11:05:10", "step": "validation", "status": "completed", "finding": "Deterministic validation PASSED", "confidence": 1.0},
+        {"time": "11:05:12", "step": "knowledge_writer", "status": "completed", "finding": "Root cause report + AI Knowledge panel written to DataHub", "confidence": 0.99, "message": "4 artifacts written"},
+        {"time": "11:05:14", "step": "reflexion", "status": "completed", "finding": "Playbook created: feature-drift-psi pattern documented", "confidence": 0.90, "message": "First occurrence of feature drift pattern"},
+        {"time": "11:05:16", "step": "eu_ai_act_compliance", "status": "completed", "finding": "EU AI Act Technical File: 3 audit records, chain VALID", "confidence": 0.98},
+        {"time": "11:05:18", "step": "planner", "status": "completed", "finding": "Investigation #55 complete in 5.0min. 9 workers fired.", "confidence": 1.0}
+      ],
+      "blast_radius": {
+        "source": {"urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,meridian.raw_transactions,PROD)", "name": "raw_transactions", "type": "dataset", "status": "critical"},
+        "affected": [
+          {"urn": "urn:li:mlModel:(urn:li:dataPlatform:mlflow,fraud_detection_v1,PROD)", "name": "fraud_detection_v1", "type": "mlModel", "status": "critical", "health_score": 58, "confidence": 0.92}
+        ],
+        "business_impact": {"predictions_today": 150000, "revenue_at_risk_daily": 200000, "affected_dashboards": 6}
+      },
+      "writeback": {
+        "root_cause_report": {"title": "Incident #55 — Root Cause Report", "status": "written"},
+        "ai_knowledge_panel": {"entity": "fraud_detection_v1", "status": "updated", "health_score": 58, "confidence": 0.92, "resolved_incidents": 1},
+        "playbook": {"title": "Playbook: Feature Drift via Distribution Shift", "status": "created"}
+      }
+    },
+    "61": {
+      "id": "61",
+      "title": "Training-Serving Skew in LTV Model",
+      "severity": "MEDIUM",
+      "status": "RESOLVED",
+      "detected": "2026-07-19T08:45:00Z",
+      "resolved": "2026-07-19T08:48:00Z",
+      "duration_seconds": 180,
+      "root_cause": "Training-serving skew: ltv_model_v2 trained on session_duration INT but serving with STRING after upstream schema change. Prediction latency increased 3x.",
+      "pattern_id": "training-serving-skew",
+      "affected_models": ["ltv_model_v2"],
+      "timeline": [
+        {"time": "08:45:00", "step": "planner", "status": "started", "finding": "Investigation initiated for incident #61", "confidence": 1.0, "message": "Training-serving skew detected in ltv_model_v2"},
+        {"time": "08:45:02", "step": "data_sentinel", "status": "completed", "finding": "SCHEMA MISMATCH: feature_store.session_duration type changed INT→STRING", "confidence": 0.94, "severity": "medium"},
+        {"time": "08:45:04", "step": "feature_drift", "status": "completed", "finding": "No PSI drift — distribution shape preserved, only type changed", "confidence": 0.88},
+        {"time": "08:45:06", "step": "training_serving_skew", "status": "completed", "finding": "TRAINING-SERVING SKEW: session_duration INT→STRING, skew=0.42", "confidence": 0.93, "severity": "high"},
+        {"time": "08:45:08", "step": "root_cause", "status": "completed", "finding": "ROOT CAUSE: feature_store (dataset) — 1 model affected. Revenue at risk: $12,500/day.", "confidence": 0.94},
+        {"time": "08:45:10", "step": "validation", "status": "completed", "finding": "Deterministic validation PASSED", "confidence": 1.0},
+        {"time": "08:45:12", "step": "knowledge_writer", "status": "completed", "finding": "Root cause report written to DataHub", "confidence": 0.99},
+        {"time": "08:45:14", "step": "reflexion", "status": "completed", "finding": "Playbook updated: training-serving-skew pattern improved", "confidence": 0.91},
+        {"time": "08:45:16", "step": "eu_ai_act_compliance", "status": "completed", "finding": "EU AI Act Technical File generated", "confidence": 0.98},
+        {"time": "08:45:18", "step": "planner", "status": "completed", "finding": "Investigation #61 complete in 3.0min. 8 workers fired. Cumulative intelligence: 18min → 3min.", "confidence": 1.0}
+      ],
+      "blast_radius": {
+        "source": {"urn": "urn:li:dataset:(urn:li:dataPlatform:feast,meridian.feature_store,PROD)", "name": "feature_store", "type": "dataset", "status": "warning"},
+        "affected": [
+          {"urn": "urn:li:mlModel:(urn:li:dataPlatform:mlflow,ltv_model_v2,PROD)", "name": "ltv_model_v2", "type": "mlModel", "status": "warning", "health_score": 68, "confidence": 0.88}
+        ],
+        "business_impact": {"predictions_today": 8000, "revenue_at_risk_daily": 12500, "affected_dashboards": 3}
+      },
+      "writeback": {
+        "root_cause_report": {"title": "Incident #61 — Root Cause Report", "status": "written"},
+        "ai_knowledge_panel": {"entity": "ltv_model_v2", "status": "updated", "health_score": 68, "resolved_incidents": 9}
+      }
+    },
+    "68": {
+      "id": "68",
+      "title": "Schema Change in raw_events (Repeat Pattern)",
+      "severity": "HIGH",
+      "status": "RESOLVED",
+      "detected": "2026-07-19T16:20:00Z",
+      "resolved": "2026-07-19T16:24:00Z",
+      "duration_seconds": 240,
+      "root_cause": "Same schema change pattern as incident #42. Reflexion playbook retrieved and applied — resolution 2x faster.",
+      "pattern_id": "schema-change-type-mismatch",
+      "affected_models": ["churn_model_v3"],
+      "timeline": [
+        {"time": "16:20:00", "step": "planner", "status": "started", "finding": "Investigation initiated for incident #68", "confidence": 1.0},
+        {"time": "16:20:02", "step": "data_sentinel", "status": "completed", "finding": "SCHEMA CHANGE DETECTED: raw_events — user_age: INT→STRING (known pattern)", "confidence": 0.97, "severity": "high"},
+        {"time": "16:20:04", "step": "feature_drift", "status": "completed", "finding": "FEATURE DRIFT: age_bucket type mismatch — playbook match found", "confidence": 0.96},
+        {"time": "16:20:06", "step": "root_cause", "status": "completed", "finding": "ROOT CAUSE: raw_events (dataset) — 1 model affected. Revenue at risk: $45,000/day. Playbook applied from incident #42.", "confidence": 0.98},
+        {"time": "16:20:08", "step": "validation", "status": "completed", "finding": "Deterministic validation PASSED", "confidence": 1.0},
+        {"time": "16:20:10", "step": "knowledge_writer", "status": "completed", "finding": "Root cause report + AI Knowledge panel written to DataHub", "confidence": 0.99},
+        {"time": "16:20:12", "step": "reflexion", "status": "completed", "finding": "Playbook improved: Resolution time: 8min → 4min (50% faster via reflexion)", "confidence": 0.94},
+        {"time": "16:20:14", "step": "eu_ai_act_compliance", "status": "completed", "finding": "EU AI Act Technical File generated, chain VALID", "confidence": 0.98},
+        {"time": "16:20:16", "step": "planner", "status": "completed", "finding": "Investigation #68 complete in 4.0min. Reflexion playbook applied — 50% faster than #42.", "confidence": 1.0}
+      ],
+      "blast_radius": {
+        "source": {"urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,meridian.raw_events,PROD)", "name": "raw_events", "type": "dataset", "status": "critical"},
+        "affected": [
+          {"urn": "urn:li:mlModel:(urn:li:dataPlatform:mlflow,churn_model_v3,PROD)", "name": "churn_model_v3", "type": "mlModel", "status": "warning", "health_score": 85, "confidence": 0.97}
+        ],
+        "business_impact": {"predictions_today": 32000, "revenue_at_risk_daily": 45000, "affected_dashboards": 8}
+      },
+      "writeback": {
+        "root_cause_report": {"title": "Incident #68 — Root Cause Report", "status": "written"},
+        "ai_knowledge_panel": {"entity": "churn_model_v3", "status": "updated", "health_score": 85, "resolved_incidents": 16},
+        "playbook": {"title": "Playbook: Schema Change to Model Degradation (improved)", "status": "updated"}
+      }
     }
   },
   "resolution_times": [
     {"id": "12", "duration_minutes": 18, "date": "2026-03-10", "pattern": "schema-change-type-mismatch"},
     {"id": "28", "duration_minutes": 8, "date": "2026-05-15", "pattern": "freshness-violation"},
-    {"id": "42", "duration_minutes": 8, "date": "2026-07-12", "pattern": "schema-change-type-mismatch"}
+    {"id": "42", "duration_minutes": 8, "date": "2026-07-12", "pattern": "schema-change-type-mismatch"},
+    {"id": "55", "duration_minutes": 5, "date": "2026-07-18", "pattern": "feature-drift-psi"},
+    {"id": "61", "duration_minutes": 3, "date": "2026-07-19", "pattern": "training-serving-skew"},
+    {"id": "68", "duration_minutes": 4, "date": "2026-07-19", "pattern": "schema-change-type-mismatch"}
   ]
 }

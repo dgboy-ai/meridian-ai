@@ -8,3 +8,28 @@ dist/
 *.egg-info/
 .pytest_cache/
 data/
+planning/
+
+# Research & internal docs (not for judges)
+research.md
+research_mimo.md
+gap_analysis.md
+sources.tsv
+claims.tsv
+*.tsv
+
+# Build artifacts
+frontend/tsconfig.tsbuildinfo
+.next/
+.vercel/
+
+# Session data
+.mimocode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

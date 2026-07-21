@@ -107,9 +107,10 @@ body {
   .hero-cubes { display: none !important; }
   .hero-cta-row { flex-direction: column !important; }
   .nav-desktop { display: none !important; }
-  .nav-mobile-btn { display: block !important; }
+  .nav-mobile-btn { display: flex !important; }
 }
 @media (min-width: 769px) {
+  .nav-desktop { display: flex !important; }
   .nav-mobile-btn { display: none !important; }
   .nav-mobile-menu { display: none !important; }
 }
@@ -125,8 +126,8 @@ body {
   50% { transform: translateY(-10px); }
 }
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 8px currentColor; }
-  50% { box-shadow: 0 0 20px currentColor; }
+  0%, 100% { box-shadow: 0 0 8px rgba(16, 185, 129, 0.6); }
+  50% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.8); }
 }
 @keyframes shimmer {
   0% { transform: translateX(-100%); }

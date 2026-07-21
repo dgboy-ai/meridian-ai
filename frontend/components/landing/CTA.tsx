@@ -68,7 +68,7 @@ export default function CTA() {
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
               <a
-                href="/models"
+                href="/incidents/42"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',

@@ -7,7 +7,7 @@ Run `python scripts/regenerate_examples.py` to regenerate them from real worker 
 
 | File | What It Shows |
 |---|---|
-| `incident_42_timeline.json` | Full investigation timeline (30 events, 14 workers) |
+| `incident_42_timeline.json` | Full investigation timeline (36 events, 17 workers) |
 | `incident_42_summary.json` | Summary: health=89, mutations=17, compliance=3 articles |
 | `ai-knowledge/churn_model_v3.json` | AI Knowledge panel: resolved_incidents=15 (increments!) |
 | `reports/incident_042_root_cause.md` | Root cause report generated from real output |

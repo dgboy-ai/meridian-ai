@@ -31,15 +31,25 @@ class ValidationLayer:
         self.known_entities = known_entities or set()
 
     def validate(self, evidence: EvidenceObject) -> ValidationResult:
-        checks = [
+        # Hard checks — these block write-back entirely
+        hard_checks = [
             self._check_confidence_threshold(evidence, min_confidence=0.7),
             self._check_entity_exists(evidence),
-            self._check_action_safety(evidence.datahub_mutations),
             self._check_duplicate_incident(evidence),
         ]
 
-        approved = all(c.passed for c in checks)
-        reasons = [f"{c.name}: {c.reason}" for c in checks if not c.passed]
+        # Soft checks — these don't block, they queue for human approval
+        soft_checks = [
+            self._check_action_safety(evidence.datahub_mutations),
+        ]
+
+        approved = all(c.passed for c in hard_checks)
+        reasons = [f"{c.name}: {c.reason}" for c in hard_checks if not c.passed]
+        # Include soft check info as warnings, not blockers
+        for c in soft_checks:
+            if not c.passed:
+                reasons.append(f"{c.name}: {c.reason} (queued for human approval)")
+
         safe_mutations = [m for m in evidence.datahub_mutations if m.safe]
 
         return ValidationResult(

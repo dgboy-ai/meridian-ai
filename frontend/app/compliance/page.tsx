@@ -42,14 +42,21 @@ export default function CompliancePage() {
   const [selectedRecord, setSelectedRecord] = useState<AuditRecord | null>(null)
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/compliance/audit-trail').then(r => r.json()),
-      fetch('/api/compliance/eu-ai-act/42').then(r => r.json()),
-    ]).then(([trail, file]) => {
-      setAuditTrail(trail)
-      setRecords(file.audit_records || [])
-      setLoading(false)
-    }).catch(() => setLoading(false))
+    // Load latest incident's compliance data dynamically
+    fetch('/api/incidents')
+      .then(r => r.json())
+      .then(async (data) => {
+        const incidents = data.incidents || []
+        const latestId = incidents.length > 0 ? incidents[0].id : '42'
+        const [trail, file] = await Promise.all([
+          fetch('/api/compliance/audit-trail').then(r => r.json()),
+          fetch(`/api/compliance/eu-ai-act/${latestId}`).then(r => r.json()),
+        ])
+        setAuditTrail(trail)
+        setRecords(file.audit_records || [])
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
   }, [])
 
   const runPiiScan = async () => {

@@ -1,4 +1,7 @@
-"""Replay mode — streams pre-recorded incident data with realistic delays."""
+"""Replay mode — streams pre-recorded incident data with realistic delays.
+
+Also supports replaying live investigation incidents from persistence.
+"""
 import json
 import asyncio
 import logging
@@ -10,7 +13,7 @@ logger = logging.getLogger("meridian-ai.replay")
 
 
 class ReplayDriver:
-    def __init__(self, data_path: str | None = None):
+    def __init__(self, data_path: str | None = None, persistence=None):
         if data_path is None:
             data_path = str(Path(__file__).parent / "replay_data.json")
         try:
@@ -22,6 +25,11 @@ class ReplayDriver:
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse replay data at {data_path}: {e}. Using empty dataset.")
             self._data = {"incidents": {}, "resolution_times": []}
+        self._persistence = persistence
+
+    def set_persistence(self, persistence) -> None:
+        """Attach persistence layer so live investigation incidents can be replayed."""
+        self._persistence = persistence
 
     def list_incidents(self) -> list[dict]:
         incidents = []
@@ -45,7 +53,31 @@ class ReplayDriver:
         return self._data.get("resolution_times", [])
 
     async def stream_investigation(self, incident_id: str, delay: float = 0.5) -> AsyncIterator[dict]:
+        # First try pre-recorded replay data
         incident = self.get_incident(incident_id)
+
+        # If not in replay data, try persistence (live investigation incidents)
+        if not incident and self._persistence:
+            try:
+                record = await self._persistence.get_incident(incident_id)
+                if record:
+                    incident = {
+                        "id": record.incident_id,
+                        "title": record.title,
+                        "severity": record.severity,
+                        "status": record.status,
+                        "detected": record.detected,
+                        "duration_seconds": record.duration_seconds,
+                        "root_cause": record.root_cause,
+                        "pattern_id": record.pattern_id,
+                        "affected_models": record.affected_models or [],
+                        "timeline": record.timeline or [],
+                        "blast_radius": record.blast_radius or {},
+                        "writeback": {},
+                    }
+            except Exception as e:
+                logger.warning(f"Failed to load incident {incident_id} from persistence: {e}")
+
         if not incident:
             yield {"step": "error", "status": "failed", "message": f"Incident {incident_id} not found"}
             return

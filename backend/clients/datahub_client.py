@@ -470,25 +470,22 @@ class DataHubMCPClient:
         linked_entities: list[str] | None = None,
         replace_existing: bool = False,
     ) -> dict:
-        if self._connected:
-            # DataHub doesn't have a documents API.
-            # Store as structured properties on the first linked entity,
-            # or just log for audit purposes.
-            if linked_entities:
-                # Write as structured properties on the entity
-                props = {
-                    "meridian_report_title": title,
-                    "meridian_report_content": content[:1000],  # Truncate for storage
-                    "meridian_report_tags": ",".join(tags or []),
-                }
-                await self.add_structured_properties(linked_entities[0], props)
-                logger.info(f"Document '{title}' saved as structured properties on {linked_entities[0]}")
+        if self._connected and linked_entities:
+            # Write summary as structured properties on the entity (truncated for DataHub storage)
+            # But keep full content in-memory for reflexion loop retrieval
+            props = {
+                "meridian_report_title": title,
+                "meridian_report_summary": content[:500],
+                "meridian_report_tags": ",".join(tags or []),
+            }
+            await self.add_structured_properties(linked_entities[0], props)
+            logger.info(f"Document '{title}' saved as structured properties on {linked_entities[0]}")
 
-        # Always store in-memory for retrieval
+        # Always store FULL content in-memory for reflexion loop retrieval
         doc = {
             "id": f"doc-{len(self._documents) + 1}",
             "title": title,
-            "content": content,
+            "content": content,  # Full content — no truncation
             "tags": tags or [],
             "linked_entities": linked_entities or [],
         }
@@ -501,53 +498,85 @@ class DataHubMCPClient:
     # All mutations use DataHub GraphQL API for correctness.
     # In mock mode, they update in-memory state.
 
+    def _get_graphql_url(self) -> str:
+        """Get the absolute GraphQL URL for DataHub GMS.
+
+        DataHub's GraphQL endpoint is at /api/graphql on the GMS host,
+        NOT under /api/gms/api/graphql. This method strips the /api/gms
+        suffix from the base URL and appends /api/graphql.
+        """
+        base = self.gms_url.rstrip("/")
+        # Strip /api/gms suffix if present (REST endpoint path)
+        if base.endswith("/api/gms"):
+            base = base[: -len("/api/gms")]
+        return f"{base}/api/graphql"
+
     async def _graphql_mutation(self, mutation: str, variables: dict) -> dict | None:
-        """Execute a GraphQL mutation against DataHub GMS."""
+        """Execute a GraphQL mutation against DataHub GMS.
+
+        Uses the absolute GraphQL endpoint URL because the httpx client's
+        base_url points to /api/gms (REST), but GraphQL lives at /api/graphql.
+        """
         if not self._connected:
             return None
         try:
-            client = await self._get_client()
+            headers = {"Content-Type": "application/json"}
+            if self.token:
+                headers["Authorization"] = f"Bearer {self.token}"
+            graphql_url = self._get_graphql_url()
             body = {"query": mutation, "variables": variables}
-            response = await client.post("/api/graphql", json=body)
-            response.raise_for_status()
-            data = response.json()
-            if "errors" in data:
-                logger.error(f"GraphQL mutation errors: {data['errors']}")
-                return None
-            return data.get("data")
+            async with httpx.AsyncClient(timeout=httpx.Timeout(self._timeout)) as client:
+                response = await client.post(graphql_url, json=body, headers=headers)
+                response.raise_for_status()
+                data = response.json()
+                if "errors" in data:
+                    logger.error(f"GraphQL mutation errors: {data['errors']}")
+                    return None
+                return data.get("data")
         except Exception as e:
             logger.error(f"GraphQL mutation failed: {e}")
             return None
 
     async def add_structured_properties(self, entity_urn: str, properties: dict) -> dict:
         if self._connected:
+            # Use addProperties mutation to attach key-value properties to entity.
+            # DataHub's updateStructuredProperties requires pre-defined property URNs,
+            # so we use addProperties which works with arbitrary keys.
             mutation = """
-            mutation UpdateStructuredProperties($input: UpdateStructuredPropertiesInput!) {
-                updateStructuredProperties(input: $input)
+            mutation AddProperties($input: EntityPropertiesInput!) {
+                updateEntityProperties(input: $input)
             }
             """
-            # Convert properties to structured property format
-            structured_props = []
+            # Build aspect properties list
+            aspects = []
             for key, value in properties.items():
                 if isinstance(value, dict):
                     for sub_key, sub_value in value.items():
-                        structured_props.append({
-                            "structuredPropertyUrn": f"urn:li:structuredProperty:{key}.{sub_key}",
-                            "values": [{"value": str(sub_value)}],
+                        aspects.append({
+                            "aspectName": f"meridian_{key}_{sub_key}",
+                            "aspectType": "DATAHUB",
+                            "contentType": "JSON",
+                            "content": json.dumps({"value": str(sub_value)}),
                         })
                 else:
-                    structured_props.append({
-                        "structuredPropertyUrn": f"urn:li:structuredProperty:{key}",
-                        "values": [{"value": str(value)}],
+                    aspects.append({
+                        "aspectName": f"meridian_{key}",
+                        "aspectType": "DATAHUB",
+                        "contentType": "JSON",
+                        "content": json.dumps({"value": str(value)}),
                     })
 
             result = await self._graphql_mutation(mutation, {
                 "input": {
                     "entityUrn": entity_urn,
-                    "properties": structured_props,
+                    "aspectName": "meridianProperties",
+                    "aspectType": "DATAHUB",
+                    "contentType": "JSON",
+                    "content": json.dumps({"properties": properties}),
                 }
             })
             if result:
+                logger.info(f"Structured properties written to DataHub for {entity_urn}")
                 return {"status": "ok", "entity_urn": entity_urn, "properties": properties}
 
         # Mock fallback
@@ -558,18 +587,19 @@ class DataHubMCPClient:
 
     async def batch_add_tags(self, urns: list[str], tags: list[str]) -> dict:
         if self._connected:
-            # Use GraphQL mutation for adding tags
+            # Use addTag mutation with proper tagUrn format
             mutation = """
-            mutation BatchAddTags($input: BatchAddTagsInput!) {
-                batchAddTags(input: $input)
+            mutation AddTag($input: AddTagInput!) {
+                addTag(input: $input)
             }
             """
             for urn in urns:
                 for tag in tags:
+                    tag_urn = f"urn:li:tag:{tag}"
                     result = await self._graphql_mutation(mutation, {
                         "input": {
-                            "urn": urn,
-                            "tag": tag,
+                            "resourceUrn": urn,
+                            "tagUrn": tag_urn,
                         }
                     })
                     if not result:
@@ -591,15 +621,26 @@ class DataHubMCPClient:
         affected_entities: list[str] | None = None,
     ) -> dict:
         if self._connected:
-            # DataHub doesn't have a direct incident REST API.
-            # Incidents are created via GraphQL mutations or the UI.
-            # We'll use the MCP server's incident creation if available,
-            # otherwise log the incident for manual creation.
-            logger.info(
-                f"Incident requested: type={type_}, severity={severity}, "
-                f"affected={affected_entities}. "
-                f"Note: DataHub incidents should be created via the UI or GraphQL."
-            )
+            # Create incident via DataHub GraphQL API
+            mutation = """
+            mutation RaiseIncident($input: RaiseIncidentInput!) {
+                raiseIncident(input: $input)
+            }
+            """
+            result = await self._graphql_mutation(mutation, {
+                "input": {
+                    "type": type_,
+                    "severity": severity,
+                    "description": description[:500],
+                    "incidentSource": "AUTOMATED",
+                    "assignee": "urn:li:corpuser:datahub",
+                    "notificationChannel": "DATAHUB",
+                }
+            })
+            if result:
+                logger.info(f"Real incident raised in DataHub: type={type_}, severity={severity}")
+            else:
+                logger.warning("Failed to raise incident in DataHub via GraphQL, falling back to local tracking")
 
         # Create incident record (always, even in real mode for tracking)
         incident = {

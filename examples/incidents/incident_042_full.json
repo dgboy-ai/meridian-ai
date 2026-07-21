@@ -14,11 +14,11 @@
     {
       "worker": "data_sentinel",
       "confidence": 0.95,
-      "finding": "DATA SENTINEL: 2 detections in raw_events. schema_change: 1 type changes, 0 added, 0 removed | pii_exposure: 10 PII violations in 4 columns"
+      "finding": "DATA SENTINEL: 3 detections in raw_events. schema_change: 1 type changes, 0 added, 0 removed | volume_anomaly: Dataset has 0 rows but 4 columns defined \u2014 possible empty table | pii_exposure: 10 PII violations in 4 columns"
     },
     {
       "worker": "feature_drift",
-      "confidence": 0.9,
+      "confidence": 0.95,
       "finding": "FEATURE DRIFT: 8 features affected. Type mismatches: age_bucket: INT\u2192MISSING, event_frequency: INT\u2192MISSING, session_duration: INT\u2192MISSING, event_id: MISSING\u2192STRING, user_age: MISSING\u2192STRING, timestamp: MISSING\u2192TIMESTAMP. PSI/KS per feature: event_frequency=PSI:6.6338/KS:0.8000, session_duration=PSI:6.0892/KS:0.8000. Overall: 1.0000"
     },
     {
@@ -29,17 +29,22 @@
     {
       "worker": "data_leakage",
       "confidence": 0.95,
-      "finding": "No temporal data leakage detected in feature_store for churn_model_v3. Timestamp columns: none. No suspicious patterns found."
+      "finding": "No temporal data leakage detected in feature_pipeline for churn_model_v3. Timestamp columns: none. No suspicious patterns found."
     },
     {
       "worker": "root_cause",
-      "confidence": 0.96,
+      "confidence": 0.94,
       "finding": "ROOT CAUSE: raw_events (dataset) \u2014 1 downstream entities affected. Models: none. Datasets: feature_pipeline. Revenue at risk: $45,120/day. Propagation: feature_pipeline \u2192 feature_store \u2192 churn_model_v3 \u2192 feature_pipeline \u2192 feature_store. Paths traced: 3."
+    },
+    {
+      "worker": "verifier_agent",
+      "confidence": 0.6,
+      "finding": "VERIFICATION FAILED: Root cause conclusion not fully supported. 3/4 checks passed. Failed: Models not found in lineage: churn_model_v3, ltv_model_v2, segment_model_v1. Recommend human review."
     },
     {
       "worker": "knowledge_writer",
       "confidence": 0.99,
-      "finding": "Knowledge written to DataHub: root cause report, AI Knowledge panel updated on 3 models (health=89, confidence=0.96, resolved=28, patterns=0, prior_incidents=0), playbook updated. Resolution: 0.0min"
+      "finding": "Knowledge written to DataHub: root cause report, AI Knowledge panel updated on 3 models (health=89, confidence=0.94, resolved=28, patterns=0, prior_incidents=0), playbook updated. Resolution: 0.0min"
     },
     {
       "worker": "reflexion",
@@ -54,7 +59,7 @@
     {
       "worker": "eu_ai_act_compliance",
       "confidence": 0.98,
-      "finding": "EU AI Act Technical File generated for incident #42: 3 audit records, Articles 12/13/14 covered, chain VALID"
+      "finding": "EU AI Act Technical File generated for incident #42: 4 audit records, Articles 12/13/14 covered, chain VALID"
     },
     {
       "worker": "shadow_ai_discovery",
@@ -69,7 +74,7 @@
     {
       "worker": "explanation_drift",
       "confidence": 0.88,
-      "finding": "EXPLANATION DRIFT in churn_model_v3: 3 features shifted. Changes: age_bucket: 0.35\u21920.08, event_frequency: 0.28\u21920.42, session_duration: 0.22\u21920.35. Total drift: 0.5400"
+      "finding": "EXPLANATION DRIFT in churn_model_v3: 3 features shifted. Changes: event_frequency: 0.28\u21920.14, session_duration: 0.22\u21920.15, user_id: 0.15\u21920.07. Total drift: 0.3348"
     },
     {
       "worker": "self_healing_assertions",

@@ -123,7 +123,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                 Reload Page
               </button>
               <a
-                href="/"
+                href="/dashboard"
                 style={{
                   padding: '12px 24px',
                   borderRadius: '10px',

@@ -3,16 +3,16 @@
   "ai_knowledge_panel": {
     "resolved_incidents": 15,
     "known_failure_patterns": 0,
-    "last_investigation": "2026-07-14T05:29:47.086791+00:00",
-    "ai_confidence": 0.96,
+    "last_investigation": "2026-07-20T20:29:10.170856+00:00",
+    "ai_confidence": 0.94,
     "ai_health_score": 89,
     "resolution_time_minutes": 3.0,
     "tags": [
       "at-risk",
-      "ai-investigated",
       "churn",
-      "meridian-commerce",
-      "production"
+      "production",
+      "ai-investigated",
+      "meridian-commerce"
     ]
   }
 }

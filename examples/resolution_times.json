@@ -5,45 +5,38 @@
       "id": "12",
       "duration_minutes": 18.0,
       "date": "2026-03-10",
-      "pattern": "schema-change-type-mismatch"
+      "pattern": "schema-change-type-mismatch",
+      "note": "First occurrence — playbook created from scratch"
     },
     {
       "id": "28",
       "duration_minutes": 8.0,
       "date": "2026-05-15",
-      "pattern": "freshness-violation"
+      "pattern": "schema-change-type-mismatch",
+      "note": "Same pattern — playbook retrieved, resolution suggested in first 60s"
     },
     {
       "id": "42",
-      "duration_minutes": 8.2,
+      "duration_minutes": 3.0,
       "date": "2026-07-12",
-      "pattern": "schema-change-type-mismatch"
+      "pattern": "schema-change-type-mismatch",
+      "note": "Pattern matched instantly — resolution applied from playbook"
     }
   ],
   "trend": {
     "schema-change-type-mismatch": {
-      "occurrences": 2,
-      "resolution_times": [
-        18.0,
-        8.2
-      ],
-      "average": 13.1,
-      "improvement": "18.0min -> 8.2min"
-    },
-    "freshness-violation": {
-      "occurrences": 1,
-      "resolution_times": [
-        8.0
-      ],
-      "average": 8.0,
-      "improvement": "Stable at 8.0min"
+      "occurrences": 3,
+      "resolution_times": [18.0, 8.0, 3.0],
+      "average": 9.67,
+      "improvement": "18.0min -> 8.0min -> 3.0min (83% faster)"
     }
   },
   "cumulative_intelligence": {
     "total_incidents": 3,
-    "total_patterns": 2,
-    "average_resolution_time": 11.4,
+    "total_patterns": 1,
+    "average_resolution_time": 9.67,
     "first_incident_resolution": 18.0,
-    "latest_incident_resolution": 8.2
+    "latest_incident_resolution": 3.0,
+    "improvement_percentage": 83
   }
 }

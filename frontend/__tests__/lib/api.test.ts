@@ -115,12 +115,12 @@ describe('API Client', () => {
     it('returns system architecture', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: async () => ({ name: 'Meridian AI', workers: [{ id: 'data_sentinel' }], stats: { total_workers: 21 } }),
+        json: async () => ({ name: 'Meridian AI', workers: [{ id: 'data_sentinel' }], stats: { total_workers: 18 } }),
       })
 
       const data = await getArchitecture()
       expect(data.name).toBe('Meridian AI')
-      expect(data.stats.total_workers).toBe(21)
+      expect(data.stats.total_workers).toBe(18)
     })
   })
 

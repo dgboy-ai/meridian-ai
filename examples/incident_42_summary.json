@@ -7,6 +7,7 @@
     "data_leakage",
     "root_cause",
     "validation",
+    "verifier_agent",
     "knowledge_writer",
     "reflexion",
     "lifecycle_governance",
@@ -22,7 +23,7 @@
   "health_score": 89,
   "health_assessment": "reliable",
   "datahub_mutations": 17,
-  "validation_passed": false,
+  "validation_passed": true,
   "reflexion": {
     "pattern_id": "schema-change-type-mismatch",
     "improvement": "Resolution time: 0.0min \u2192 0.0min"
@@ -33,7 +34,7 @@
       "13",
       "14"
     ],
-    "audit_chain_length": 3
+    "audit_chain_length": 17
   },
   "cost_attribution": {
     "incident_id": "42",
@@ -45,7 +46,7 @@
     "manual_time_minutes": 45.0,
     "time_saved_minutes": 45.0,
     "incidents_prevented": 0,
-    "revenue_at_risk": 0,
+    "revenue_at_risk": 45120.0,
     "roi_percentage": 0.0,
     "cost_per_minute_saved": 0.0
   },
@@ -60,7 +61,7 @@
             "source_type": "datahub_metadata",
             "source_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,meridian.raw_events,PROD)",
             "source_name": "Dataset metadata",
-            "retrieved_at": 1784006987.0839784,
+            "retrieved_at": 1784579350.1652067,
             "freshness_seconds": 0.0,
             "confidence": 1.0,
             "verified": true,

@@ -20,4 +20,4 @@ Health score at detection: 89
 
 ## Pattern Statistics
 - Confidence: 17 mutations
-- Workers fired: 16
+- Workers fired: 17

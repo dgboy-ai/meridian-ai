@@ -134,8 +134,11 @@ class TestActionSafety:
         ]
         evidence = _make_evidence(mutations=mutations)
         result = layer.validate(evidence)
-        assert result.approved is False
+        # Unsafe mutations are now soft checks — they don't block approval
+        # but are reported as warnings queued for human approval
+        assert result.approved is True
         assert any("unsafe" in r.lower() for r in result.reasons)
+        assert any("queued" in r.lower() for r in result.reasons)
         assert len(result.safe_mutations) == 0
 
     def test_mixed_safe_and_unsafe(self):
@@ -146,8 +149,10 @@ class TestActionSafety:
         ]
         evidence = _make_evidence(mutations=mutations)
         result = layer.validate(evidence)
-        assert result.approved is False
+        # Mixed: hard checks pass, unsafe mutations are warnings
+        assert result.approved is True
         assert len(result.safe_mutations) == 1
+        assert any("queued" in r.lower() for r in result.reasons)
 
     def test_no_mutations(self):
         layer = ValidationLayer()

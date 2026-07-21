@@ -66,7 +66,7 @@ class PlannerAgent:
         self.lifecycle = LifecycleGovernance(mcp, groq)
         self.skew_detective = TrainingServingSkewDetective(mcp, groq)
         self.leakage_detector = DataLeakageDetector(mcp, groq)
-        self.compliance_engine = EUAIActComplianceEngine(mcp, groq)
+        self.compliance_engine = EUAIActComplianceEngine(mcp, groq, load_persisted=True)
         self.dbt_generator = DbtCodeGenerator(mcp, groq)
         self.shadow_discovery = ShadowAIDiscovery(mcp, groq)
         self.contract_enforcer = ContractEnforcer(mcp, groq)

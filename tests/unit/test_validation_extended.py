@@ -43,8 +43,10 @@ class TestValidationLayerExtended:
             datahub_mutations=[DataHubMutation(tool="delete", params={}, safe=False)],
         )
         result = v.validate(e)
-        assert result.approved is False
+        # Unsafe mutations are now soft checks — queued for human approval
+        assert result.approved is True
         assert any("unsafe" in r.lower() for r in result.reasons)
+        assert any("queued" in r.lower() for r in result.reasons)
 
     def test_safe_mutations_filtered(self):
         v = ValidationLayer()

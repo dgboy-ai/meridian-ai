@@ -13,7 +13,7 @@ pip install -e .
 python -m backend.main
 ```
 
-Open http://localhost:8000/docs — run the investigation endpoint. See 14 workers fire, see DataHub mutations happen.
+Open http://localhost:8000/docs — run the investigation endpoint. See 17 workers fire, see DataHub mutations happen.
 
 ### Option B: With Real DataHub (Docker)
 
@@ -191,9 +191,9 @@ Meridian AI works with any data source in DataHub — Snowflake, BigQuery, Redsh
 ## The Flywheel (Why This Matters)
 
 ```
-Incident #1:  18 min  (first occurrence, playbook created)
-Incident #28:  8 min  (different pattern, playbook retrieved)
-Incident #42:  8 min  (same pattern, playbook matched)
+Incident #12:  18 min  (first occurrence — playbook created)
+Incident #28:   8 min  (same pattern — playbook retrieved)
+Incident #42:   3 min  (pattern matched instantly — knowledge applied)
 ```
 
 Every incident makes the next one faster. Not because the LLM improved. Because the knowledge base in DataHub improved. And it's stored where every future engineer and agent can access it.

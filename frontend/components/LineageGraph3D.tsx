@@ -48,11 +48,34 @@ interface BurstParticle {
   size: number
 }
 
-interface LineageGraph3DProps {
-  activePhase: 'idle' | 'drift' | 'diagnose' | 'remediate'
+interface NodeData {
+  name: string
+  type: string
+  status?: string
+  health_score?: number
 }
 
-export default function LineageGraph3D({ activePhase }: LineageGraph3DProps) {
+interface LineageGraph3DProps {
+  activePhase: 'idle' | 'drift' | 'diagnose' | 'remediate'
+  sourceNode?: NodeData | null
+  affectedNodes?: NodeData[]
+}
+
+const NODE_COLORS: Record<string, string> = {
+  dataset: '#6366f1',
+  mlModel: '#a855f7',
+  features: '#6366f1',
+  deployment: '#a855f7',
+  datahub: '#ec4899',
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  critical: '#f43f5e',
+  warning: '#f59e0b',
+  healthy: '#10b981',
+}
+
+export default function LineageGraph3D({ activePhase, sourceNode, affectedNodes }: LineageGraph3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const stateRef = useRef({ activePhase, rotation: 0, mouseX: 0, mouseY: 0 })
   const [dims, setDims] = useState({ width: 1200, height: 800 })
@@ -97,22 +120,50 @@ export default function LineageGraph3D({ activePhase }: LineageGraph3DProps) {
       })
     }
 
-    // Sleek, tiny background nodes for elegant high-tech coordinate references
-    const nodes: Node3D[] = [
-      { id: '1', label: 'customer_churn_raw (Dataset)', type: 'dataset', baseX: -200, baseY: -40, baseZ: 30, x: 0, y: 0, z: 0, color: '#6366f1', size: 5 },
-      { id: '2', label: 'customer_profile_features (MLFeatureTable)', type: 'features', baseX: -60, baseY: -10, baseZ: -30, x: 0, y: 0, z: 0, color: '#6366f1', size: 6 },
-      { id: '3', label: 'churn_model_v3 (MLModel)', type: 'model', baseX: 60, baseY: 30, baseZ: 25, x: 0, y: 0, z: 0, color: '#a855f7', size: 7 },
-      { id: '4', label: 'churn_model_prod (MLModelDeployment)', type: 'deployment', baseX: 200, baseY: 60, baseZ: -35, x: 0, y: 0, z: 0, color: '#a855f7', size: 6 },
-      { id: '5', label: 'DataHub GMS (Context Platform)', type: 'datahub', baseX: 0, baseY: 110, baseZ: 40, x: 0, y: 0, z: 0, color: '#ec4899', size: 8 }
+    // Build nodes from props or fall back to defaults
+    const hasRealData = sourceNode && affectedNodes && affectedNodes.length > 0
+    const sourceName = hasRealData ? sourceNode!.name : 'raw_events'
+    const sourceType = hasRealData ? sourceNode!.type : 'dataset'
+    const sourceStatus = hasRealData ? (sourceNode!.status || 'critical') : 'critical'
+
+    const nodePositions = [
+      { baseX: -200, baseY: -40, baseZ: 30 },
+      { baseX: -60, baseY: -10, baseZ: -30 },
+      { baseX: 60, baseY: 30, baseZ: 25 },
+      { baseX: 200, baseY: 60, baseZ: -35 },
+      { baseX: 0, baseY: 110, baseZ: 40 },
     ]
 
-    const links: Link3D[] = [
-      { source: '1', target: '2' },
-      { source: '2', target: '3' },
-      { source: '3', target: '4' },
-      { source: '5', target: '1' },
-      { source: '5', target: '3' }
+    const nodes: Node3D[] = [
+      { id: 'source', label: `${sourceName} (${sourceType})`, type: sourceType, ...nodePositions[0], x: 0, y: 0, z: 0, color: STATUS_COLORS[sourceStatus] || NODE_COLORS[sourceType] || '#6366f1', size: 6 },
     ]
+
+    const affected = hasRealData ? affectedNodes! : [
+      { name: 'feature_pipeline', type: 'dataset', status: 'warning' },
+      { name: 'churn_model_v3', type: 'mlModel', status: 'critical' },
+      { name: 'ltv_model_v2', type: 'mlModel', status: 'critical' },
+    ]
+
+    affected.forEach((a, i) => {
+      const pos = nodePositions[Math.min(i + 1, nodePositions.length - 1)]
+      const statusColor = STATUS_COLORS[a.status || 'healthy'] || NODE_COLORS[a.type] || '#a855f7'
+      nodes.push({
+        id: `affected-${i}`,
+        label: `${a.name} (${a.type})`,
+        type: a.type,
+        ...pos,
+        x: 0, y: 0, z: 0,
+        color: statusColor,
+        size: a.type === 'mlModel' ? 7 : 5,
+      })
+    })
+
+    // Add DataHub node
+    nodes.push({ id: 'datahub', label: 'DataHub GMS', type: 'datahub', ...nodePositions[4], x: 0, y: 0, z: 0, color: '#ec4899', size: 8 })
+
+    const links: Link3D[] = nodes.slice(1, -1).map((n) => ({ source: 'source', target: n.id }))
+    links.push({ source: 'datahub', target: 'source' })
+    if (nodes.length > 2) links.push({ source: 'datahub', target: nodes[1].id })
 
     let particles: Particle[] = []
     let burstParticles: BurstParticle[] = []
@@ -157,12 +208,11 @@ export default function LineageGraph3D({ activePhase }: LineageGraph3DProps) {
 
       if (phase !== lastPhase) {
         if (phase === 'drift') {
-          triggerBurstAtNode('1', '#f43f5e', 18)
-          triggerBurstAtNode('2', '#f43f5e', 12)
+          triggerBurstAtNode('source', '#f43f5e', 18)
+          nodes.filter(n => n.id.startsWith('affected')).forEach(n => triggerBurstAtNode(n.id, '#f43f5e', 12))
         } else if (phase === 'remediate') {
-          triggerBurstAtNode('5', '#ec4899', 12)
-          triggerBurstAtNode('3', '#10b981', 18)
-          triggerBurstAtNode('4', '#10b981', 18)
+          triggerBurstAtNode('datahub', '#ec4899', 12)
+          nodes.filter(n => n.id.startsWith('affected')).forEach(n => triggerBurstAtNode(n.id, '#10b981', 18))
         }
         lastPhase = phase
       }
@@ -226,13 +276,13 @@ export default function LineageGraph3D({ activePhase }: LineageGraph3DProps) {
         node.z = rz
 
         if (phase === 'drift') {
-          node.color = (node.id === '1' || node.id === '2') ? '#f43f5e' : '#f59e0b'
+          node.color = (node.id === 'source' || node.id.startsWith('affected')) ? '#f43f5e' : '#f59e0b'
         } else if (phase === 'diagnose') {
-          node.color = (node.id === '1' || node.id === '2') ? '#f43f5e' : '#6366f1'
+          node.color = (node.id === 'source' || node.id.startsWith('affected')) ? '#f43f5e' : '#6366f1'
         } else if (phase === 'remediate') {
           node.color = '#10b981'
         } else {
-          node.color = node.id === '5' ? '#ec4899' : (node.id === '1' || node.id === '2') ? '#6366f1' : '#a855f7'
+          node.color = node.id === 'datahub' ? '#ec4899' : node.id === 'source' ? '#6366f1' : '#a855f7'
         }
       })
 
@@ -244,11 +294,11 @@ export default function LineageGraph3D({ activePhase }: LineageGraph3DProps) {
         if (src && tgt) {
           let pColor = '#a855f7'
           if (phase === 'drift') {
-            pColor = (src.id === '1' || src.id === '2') ? '#f43f5e' : '#f59e0b'
+            pColor = (src.id === 'source' || src.id.startsWith('affected')) ? '#f43f5e' : '#f59e0b'
           } else if (phase === 'remediate') {
             pColor = '#10b981'
           } else {
-            pColor = src.id === '5' ? '#ec4899' : '#6366f1'
+            pColor = src.id === 'datahub' ? '#ec4899' : '#6366f1'
           }
           particles.push({
             sourceNode: src,
@@ -281,12 +331,13 @@ export default function LineageGraph3D({ activePhase }: LineageGraph3DProps) {
         }
       })
 
-      // 6. Draw Particles
-      particles.forEach((p, idx) => {
+      // 6. Draw Particles (iterate backwards to safely remove completed ones)
+      for (let idx = particles.length - 1; idx >= 0; idx--) {
+        const p = particles[idx]
         p.progress += p.speed
         if (p.progress >= 1) {
           particles.splice(idx, 1)
-          return
+          continue
         }
 
         const x = p.sourceNode.x + (p.targetNode.x - p.sourceNode.x) * p.progress
@@ -301,16 +352,17 @@ export default function LineageGraph3D({ activePhase }: LineageGraph3DProps) {
         ctx.shadowColor = p.color
         ctx.fill()
         ctx.shadowBlur = 0
-      })
+      }
 
-      // 7. Draw Explosion Particles
-      burstParticles.forEach((p, idx) => {
+      // 7. Draw Explosion Particles (iterate backwards to safely remove)
+      for (let idx = burstParticles.length - 1; idx >= 0; idx--) {
+        const p = burstParticles[idx]
         p.x += p.vx
         p.y += p.vy
         p.life++
         if (p.life >= p.maxLife) {
           burstParticles.splice(idx, 1)
-          return
+          continue
         }
 
         const opacity = 1 - p.life / p.maxLife
@@ -318,14 +370,14 @@ export default function LineageGraph3D({ activePhase }: LineageGraph3DProps) {
         ctx.arc(p.x, p.y, p.size * opacity, 0, Math.PI * 2)
         ctx.fillStyle = p.color
         ctx.fill()
-      })
+      }
 
       // 8. Draw Nodes
       nodes.forEach((node) => {
         const projected = project(node.x, node.y, node.z)
 
-        // Diagnose sweep sonar
-        if (phase === 'diagnose' && node.id === '3') {
+        // Diagnose sweep sonar on first affected node
+        if (phase === 'diagnose' && node.id.startsWith('affected')) {
           const scanRadius = ((Date.now() % 1600) / 1600) * 80
           ctx.beginPath()
           ctx.arc(projected.x, projected.y, scanRadius * projected.scale, 0, Math.PI * 2)

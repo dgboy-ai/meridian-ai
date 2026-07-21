@@ -6,10 +6,11 @@ ROOT CAUSE: raw_events (dataset) — 1 downstream entities affected. Models: non
 
 ## Evidence Chain
 - data_sentinel: confidence 0.95
-- feature_drift: confidence 0.9
+- feature_drift: confidence 0.95
 - training_serving_skew: confidence 0.9
 - data_leakage: confidence 0.95
-- root_cause: confidence 0.96
+- root_cause: confidence 0.94
+- verifier_agent: confidence 0.6
 - knowledge_writer: confidence 0.99
 - reflexion: confidence 0.92
 - lifecycle_governance: confidence 0.95
@@ -29,4 +30,4 @@ Computed from worker confidence: 89 (reliable)
 
 ## Compliance
 EU AI Act Articles 12, 13, 14
-Audit chain length: 3
+Audit chain length: 17

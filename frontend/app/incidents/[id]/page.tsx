@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import InvestigateButton from '../../../components/InvestigateButton'
+import LineageGraph3D from '../../../components/LineageGraph3D'
 
 // Use relative URLs - Next.js rewrites proxy to backend
 const API = ''
@@ -59,15 +60,21 @@ const STEP_CONFIG: Record<string, { icon: string; color: string; label: string }
   training_serving_skew: { icon: '⚖️', color: 'var(--accent-amber)', label: 'Training-Serving Skew' },
   data_leakage: { icon: '🔒', color: 'var(--accent-red)', label: 'Data Leakage' },
   root_cause: { icon: '🎯', color: 'var(--accent-blue)', label: 'Root Cause' },
+  verifier_agent: { icon: '🛡️', color: 'var(--accent-purple)', label: 'VerifierAgent' },
   validation: { icon: '✅', color: 'var(--accent-green)', label: 'Validation' },
   knowledge_writer: { icon: '📝', color: 'var(--accent-green)', label: 'Knowledge Writer' },
   reflexion: { icon: '🔄', color: 'var(--accent-purple)', label: 'Reflexion Loop' },
-  lifecycle_governance: { icon: '🏛️', color: 'var(--accent-purple)', label: 'Lifecycle Governance' },
+  lifecycle_governance: { icon: '🏛️', color: 'var(--accent-amber)', label: 'Lifecycle Governance' },
   eu_ai_act_compliance: { icon: '📋', color: 'var(--accent-blue)', label: 'EU AI Act Compliance' },
   shadow_ai_discovery: { icon: '🕵️', color: 'var(--accent-amber)', label: 'Shadow AI Discovery' },
   contract_enforcer: { icon: '📜', color: 'var(--accent-green)', label: 'Contract Enforcer' },
   explanation_drift: { icon: '💡', color: 'var(--accent-blue)', label: 'Explanation Drift' },
   self_healing_assertions: { icon: '🩹', color: 'var(--accent-green)', label: 'Self-Healing Assertions' },
+  pipeline_circuit_breaker: { icon: '⚡', color: 'var(--accent-red)', label: 'Pipeline Circuit Breaker' },
+  deprecation_advisor: { icon: '📦', color: 'var(--accent-amber)', label: 'Deprecation Advisor' },
+  dbt_code_generator: { icon: '🗄️', color: 'var(--accent-cyan)', label: 'dbt Code Generator' },
+  ml_metadata: { icon: '🤖', color: 'var(--accent-purple)', label: 'ML Metadata' },
+  agentic_circuit_breaker: { icon: '🔌', color: 'var(--accent-red)', label: 'Agentic Circuit Breaker' },
   complete: { icon: '🏁', color: 'var(--accent-green)', label: 'Complete' },
 }
 
@@ -86,8 +93,69 @@ export default function IncidentPage() {
   useEffect(() => {
     fetch(`${API}/api/incidents/${params.id}`)
       .then(r => r.json())
-      .then(data => { setIncident(data); setLoading(false) })
+      .then(data => {
+        setIncident(data)
+        setLoading(false)
+        // Auto-start live SSE stream for in-progress investigations
+        if (data.status === 'IN_PROGRESS') {
+          startLiveStream()
+        }
+      })
       .catch(() => setLoading(false))
+  }, [params.id])
+
+  const startLiveStream = useCallback(() => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close()
+    }
+
+    setStreamingEvents([])
+    setIsStreaming(true)
+    setStreamError('')
+    retryCountRef.current = 0
+
+    const connect = () => {
+      const es = new EventSource(`${API}/stream/investigate?incident_id=${params.id}&mode=live`)
+      eventSourceRef.current = es
+
+      es.onmessage = (event) => {
+        if (event.data === '[DONE]') {
+          es.close()
+          setIsStreaming(false)
+          retryCountRef.current = 0
+          // Refetch incident to get final state
+          fetch(`${API}/api/incidents/${params.id}`)
+            .then(r => r.json())
+            .then(data => setIncident(data))
+          return
+        }
+        try {
+          const data = JSON.parse(event.data)
+          if (data.step && data.step !== 'complete' && data.step !== 'error') {
+            setStreamingEvents(prev => [...prev, data])
+            retryCountRef.current = 0
+          }
+          if (data.step === 'error') {
+            setStreamError(data.error || 'Stream error')
+          }
+        } catch {}
+      }
+
+      es.onerror = () => {
+        es.close()
+        if (retryCountRef.current < MAX_RETRIES) {
+          retryCountRef.current++
+          const delay = Math.min(1000 * Math.pow(2, retryCountRef.current), 8000)
+          setStreamError(`Connection lost. Retrying in ${delay / 1000}s... (${retryCountRef.current}/${MAX_RETRIES})`)
+          setTimeout(connect, delay)
+        } else {
+          setIsStreaming(false)
+          setStreamError('Connection failed after retries.')
+        }
+      }
+    }
+
+    connect()
   }, [params.id])
 
   const startReplay = useCallback(() => {
@@ -167,9 +235,11 @@ export default function IncidentPage() {
 
   const displayTimeline = streamingEvents.length > 0 ? streamingEvents : incident.timeline
 
+  const isLive = incident.status === 'IN_PROGRESS'
+
   return (
     <Main>
-      <Header incident={incident} onReplay={startReplay} isStreaming={isStreaming} streamError={streamError} />
+      <Header incident={incident} onReplay={isLive ? startLiveStream : startReplay} isStreaming={isStreaming} streamError={streamError} />
       <TabBar active={activeTab} onChange={setActiveTab} />
       {activeTab === 'timeline' && <Timeline events={displayTimeline} isStreaming={isStreaming} />}
       {activeTab === 'blast' && <BlastRadius radius={incident.blast_radius} />}
@@ -193,6 +263,7 @@ function LoadingPulse() {
 
 function Header({ incident, onReplay, isStreaming, streamError }: { incident: Incident; onReplay: () => void; isStreaming: boolean; streamError: string }) {
   const mins = Math.round(incident.duration_seconds / 60)
+  const isLive = incident.status === 'IN_PROGRESS'
   return (
     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -207,13 +278,16 @@ function Header({ incident, onReplay, isStreaming, streamError }: { incident: In
         </h1>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <span className={`badge badge-${incident.severity === 'HIGH' ? 'red' : 'amber'}`}>{incident.severity}</span>
+          {isLive && !isStreaming && (
+            <span className="badge badge-green" style={{ animation: 'pulse-glow 2s ease-in-out infinite' }}>LIVE</span>
+          )}
           <button
             onClick={onReplay}
             disabled={isStreaming}
             className="btn-glass"
             style={{ padding: '8px 16px', fontSize: '12px', cursor: isStreaming ? 'not-allowed' : 'pointer', opacity: isStreaming ? 0.5 : 1 }}
           >
-            {isStreaming ? 'Replaying...' : 'Replay Investigation'}
+            {isStreaming ? (isLive ? 'Investigating...' : 'Replaying...') : (isLive ? 'Watch Live' : 'Replay Investigation')}
           </button>
         </div>
       </div>
@@ -483,6 +557,23 @@ function BlastRadius({ radius }: { radius: any }) {
           Blast radius: {affected.length} affected assets · ${(impact.revenue_at_risk_daily || 0).toLocaleString()}/day revenue at risk
         </motion.div>
       </div>
+
+      {/* 3D Lineage Graph */}
+      <div className="card" style={{ marginTop: '24px', padding: '0', overflow: 'hidden', position: 'relative', height: '400px' }}>
+        <div style={{ position: 'absolute', top: '16px', left: '16px', zIndex: 10 }}>
+          <h3 style={{ fontSize: '14px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Lineage Graph — 3D View
+          </h3>
+          <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+            Interactive visualization of data flow and blast radius propagation
+          </p>
+        </div>
+        <LineageGraph3D
+          activePhase={affected.length > 0 ? 'drift' : 'idle'}
+          sourceNode={source ? { name: source.name, type: source.type, status: source.status } : null}
+          affectedNodes={affected.map((n: any) => ({ name: n.name, type: n.type, status: n.status, health_score: n.health_score }))}
+        />
+      </div>
     </motion.div>
   )
 }
@@ -503,7 +594,7 @@ function WritebackLog({ writeback }: { writeback: Record<string, any> }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
           <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-green)' }} />
           <h3 style={{ fontSize: '14px', color: 'var(--accent-green)' }}>
-            4 artifacts written to DataHub
+            {items.length} artifact{items.length !== 1 ? 's' : ''} written to DataHub
           </h3>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

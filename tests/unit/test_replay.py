@@ -8,8 +8,11 @@ class TestReplayDriver:
     def test_list_incidents(self):
         driver = ReplayDriver()
         incidents = driver.list_incidents()
-        assert len(incidents) == 3
+        assert len(incidents) == 6
         assert any(i["id"] == "42" for i in incidents)
+        assert any(i["id"] == "55" for i in incidents)
+        assert any(i["id"] == "61" for i in incidents)
+        assert any(i["id"] == "68" for i in incidents)
 
     def test_get_incident(self):
         driver = ReplayDriver()
@@ -26,7 +29,7 @@ class TestReplayDriver:
     def test_get_resolution_times(self):
         driver = ReplayDriver()
         times = driver.get_resolution_times()
-        assert len(times) == 3
+        assert len(times) == 6
         assert all("duration_minutes" in t for t in times)
 
     @pytest.mark.asyncio

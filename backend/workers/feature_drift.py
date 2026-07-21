@@ -142,7 +142,7 @@ class FeatureDrift:
             worker_id="feature_drift",
             timestamp=now,
             finding=finding,
-            confidence=0.95 if overall_score < 0.2 else 0.90,
+            confidence=0.95 if overall_score > 0.2 else 0.90,
             severity=Severity.HIGH if overall_score > 0.5 else (Severity.MEDIUM if overall_score > 0.2 else Severity.LOW),
             evidence=[
                 EvidenceItem(
