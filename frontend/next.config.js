@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Vercel deployment — no standalone output
+  // Disable image optimization for Vercel (uses external images)
+  images: {
+    unoptimized: true,
+  },
   // rewrites proxy API calls to backend when BACKEND_URL is set
   async rewrites() {
     const backendUrl = process.env.BACKEND_URL
