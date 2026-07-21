@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
+import { apiUrl } from '../../../lib/config'
 import InvestigateButton from '../../../components/InvestigateButton'
 import LineageGraph3D from '../../../components/LineageGraph3D'
 

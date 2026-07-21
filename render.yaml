@@ -1,0 +1,118 @@
+services:
+  # ── Meridian AI Backend ────────────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATAHUB_MOCK=false
+      - DATAHUB_GMS_URL=http://datahub-gms:8080/api/gms
+      - LOG_LEVEL=INFO
+      - GROQ_API_KEY=${GROQ_API_KEY}
+    depends_on:
+      datahub-gms:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+  # ── DataHub Infrastructure ──────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: datahub
+      MYSQL_USER: datahub
+      MYSQL_PASSWORD: datahub
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    depends_on:
+      zookeeper:
+        condition: service_started
+    restart: unless-stopped
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    restart: unless-stopped
+
+  elasticsearch:
+    image: elasticsearch:7.17.9
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  datahub-gms:
+    build:
+      context: ./config
+      dockerfile: Dockerfile.datahub-gms
+    environment:
+      - DATAHUB_SECRET=gms-secret-key
+      - DATAHUB_APP_PORT=8080
+      - KAFKA_BOOTSTRAP_SERVER=kafka:29092
+      - ELASTICSEARCH_HOST=elasticsearch
+      - ELASTICSEARCH_PORT=9200
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_USERNAME=datahub
+      - MYSQL_PASSWORD=datahub
+      - DATAHUB_ANALYTICS_ENABLED=false
+      - JAVA_OPTS=-Xms256m -Xmx256m -Dspring.datasource.url=jdbc:mysql://mysql:3306/datahub?useSSL=false -Dspring.datasource.username=datahub -Dspring.datasource.password=datahub -Debean.datasources.gms.url=jdbc:mysql://mysql:3306/datahub?useSSL=false -Debean.datasources.gms.username=datahub -Debean.datasources.gms.password=datahub
+      - EBEAN_DATASOURCE_HOST=mysql:3306
+      - ENTITY_SERVICE_IMPL=ebean
+      - GRAPH_SERVICE_IMPL=elasticsearch
+      - SKIP_NEO4J_CHECK=true
+      - SKIP_CASSANDRA_CHECK=true
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 30
+      start_period: 240s
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
+  es-data:

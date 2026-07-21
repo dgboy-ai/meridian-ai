@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import { apiUrl } from '../lib/config'
 import ParticleField from '../components/landing/ParticleField'
 import Navbar from '../components/landing/Navbar'
 import Hero from '../components/landing/Hero'
@@ -29,7 +30,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/incidents')
+    fetch(apiUrl('/api/incidents'))
       .then(r => r.json())
       .then(data => {
         setIncidents(data.incidents || [])

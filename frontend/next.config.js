@@ -1,11 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
-  // Proxy API requests to backend in production
-  // This allows the frontend to use relative URLs (/api/*)
-  // instead of absolute URLs (http://backend-api:8000/api/*)
+  // Vercel deployment — no standalone output
+  // rewrites proxy API calls to backend when BACKEND_URL is set
   async rewrites() {
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000'
+    const backendUrl = process.env.BACKEND_URL
+    if (!backendUrl) return []
     return [
       {
         source: '/api/:path*',

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import { apiUrl } from '../../lib/config'
 
 interface CostSummary {
   total_investigations: number
@@ -49,10 +50,10 @@ export default function DashboardPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/costs').then(r => r.json()).catch(() => null),
-      fetch('/api/resolution-times').then(r => r.json()).catch(() => null),
-      fetch('/api/incidents').then(r => r.json()).catch(() => ({ incidents: [] })),
-      fetch('/api/system/architecture').then(r => r.json()).catch(() => null),
+      fetch(apiUrl('/api/costs')).then(r => r.json()).catch(() => null),
+      fetch(apiUrl('/api/resolution-times')).then(r => r.json()).catch(() => null),
+      fetch(apiUrl('/api/incidents')).then(r => r.json()).catch(() => ({ incidents: [] })),
+      fetch(apiUrl('/api/system/architecture')).then(r => r.json()).catch(() => null),
     ]).then(([costData, resData, incData, archData]) => {
       setCosts(costData)
       setResolutionTimes(resData?.incidents || [])

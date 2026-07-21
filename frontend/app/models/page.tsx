@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import { apiUrl } from '../../lib/config'
 
 const API = ''
 
@@ -51,7 +52,7 @@ export default function ModelsPage() {
   ]
 
   useEffect(() => {
-    fetch(`${API}/api/health-scores`)
+    fetch(apiUrl('/api/health-scores'))
       .then(r => r.json())
       .then(data => {
         // Use API data if non-empty, otherwise fall back to mock
@@ -70,7 +71,7 @@ export default function ModelsPage() {
     setHealthResult(null)
 
     try {
-      const res = await fetch(`${API}/api/models/${model.name}`)
+      const res = await fetch(apiUrl(`/api/models/${model.name}`))
       if (res.ok) {
         const data = await res.json()
         setHealthResult(data)

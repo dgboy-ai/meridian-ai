@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import { apiUrl } from '../../lib/config'
 
 interface ResolutionEntry {
   id: string
@@ -57,8 +58,8 @@ export default function PlaybooksPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/resolution-times').then(r => r.json()).catch(() => null),
-      fetch('/api/incidents').then(r => r.json()).catch(() => ({ incidents: [] })),
+      fetch(apiUrl('/api/resolution-times')).then(r => r.json()).catch(() => null),
+      fetch(apiUrl('/api/incidents')).then(r => r.json()).catch(() => ({ incidents: [] })),
     ]).then(([resData, incData]) => {
       setResolutionTimes(resData?.incidents || [])
       setIncidents(incData?.incidents || [])
