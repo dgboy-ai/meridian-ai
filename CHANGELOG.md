@@ -28,7 +28,7 @@ All notable changes to Meridian AI will be documented in this file.
 - Validation: unsafe mutations are warnings (queued for approval), not blockers
 - 12 API endpoints verified working (health, incidents, costs, compliance, architecture)
 - Frontend builds clean (15 static pages)
-- 552 tests passing, 11 skipped
+- 563 tests passing, 11 skipped
 
 ## [1.1.0] - 2026-07-15
 

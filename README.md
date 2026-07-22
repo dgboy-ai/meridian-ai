@@ -5,7 +5,7 @@
 Silent ML failures cost $45,000/day. Most teams don't notice for 3 days. Meridian AI catches them in 8 minutes. And the next one takes 3 — because the knowledge base learned.
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue)](#license)
-[![Tests: 552](https://img.shields.io/badge/Tests-552-green)](#technical-execution)
+[![Tests: 563](https://img.shields.io/badge/Tests-563-green)](#technical-execution)
 [![DataHub Tools: 15](https://img.shields.io/badge/DataHub%20Tools-15-purple)](#datahub-integration)
 [![Workers: 18](https://img.shields.io/badge/Workers-18-orange)](#architecture)
 
@@ -181,7 +181,7 @@ Every worker uses real computation, not LLM guessing.
 
 ## Technical Execution
 
-- **552 tests** passing (unit, integration, e2e) — CI on Python 3.11/3.12/3.13
+- **563 tests** passing (unit, integration, e2e) — CI on Python 3.11/3.12/3.13
 - **Deterministic Validation Layer** — 4 checks: confidence > 0.7, entity exists, safe ops, no duplicates
 - **Progressive Autonomy** — 5 levels from Advisory to Self-improving
 - **Maker-Checker** — VerifierAgent challenges RootCause before write-back
@@ -265,7 +265,7 @@ python scripts/regenerate_examples.py
 | Criterion | Evidence |
 |-----------|----------|
 | **Use of DataHub** | 15 capabilities (7 read + 5 write + 2 governance + Actions Framework) in `backend/clients/datahub_client.py` |
-| **Technical Execution** | 552 tests, `backend/validation.py` (4 checks), `backend/autonomy.py` (5 levels) |
+| **Technical Execution** | 563 tests, `backend/validation.py` (4 checks), `backend/autonomy.py` (5 levels) |
 | **Originality** | `examples/resolution_times.json` (flywheel), `backend/workers/eu_ai_act_compliance.py` (SHA-256 audit) |
 | **Real-World Usefulness** | `backend/health_score.py` (6 metrics), `backend/cost_tracker.py` (ROI), 4 personas |
 | **Submission Quality** | `examples/` (7 files), `scripts/regenerate_examples.py` (provable) |
