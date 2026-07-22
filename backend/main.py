@@ -3,6 +3,7 @@ import os
 import json
 import time
 import uuid
+import hashlib
 import asyncio
 import logging
 from datetime import datetime, timezone
@@ -660,11 +661,28 @@ async def _run_investigation_background(incident_id: str, dataset_urn: str):
         if step == "planner" and event.get("summary"):
             s = event["summary"]
             duration_seconds = int(s.get("resolution_time_minutes", 0) * 60)
-            affected_models = [
-                "urn:li:mlModel:(urn:li:dataPlatform:mlflow,churn_model_v3,PROD)",
-                "urn:li:mlModel:(urn:li:dataPlatform:mlflow,ltv_model_v2,PROD)",
-                "urn:li:mlModel:(urn:li:dataPlatform:mlflow,segment_model_v1,PROD)",
-            ]
+            # Extract model URNs from event evidence (not hardcoded)
+            affected_models = []
+            for ev in events:
+                ev_evidence = ev.get("evidence", {})
+                if isinstance(ev_evidence, dict):
+                    for key in ("affected_models", "model_urns", "downstream_models"):
+                        if ev_evidence.get(key):
+                            affected_models.extend(ev_evidence[key])
+                    # Also check lineage paths for model URNs
+                    for item in ev_evidence.get("evidence", []):
+                        if isinstance(item, dict) and item.get("entity_urn", "").startswith("urn:li:mlModel:"):
+                            affected_models.append(item["entity_urn"])
+            # Deduplicate while preserving order
+            seen = set()
+            affected_models = [m for m in affected_models if not (m in seen or seen.add(m))]
+            # Fallback to demo models if no models found in events
+            if not affected_models:
+                affected_models = [
+                    "urn:li:mlModel:(urn:li:dataPlatform:mlflow,churn_model_v3,PROD)",
+                    "urn:li:mlModel:(urn:li:dataPlatform:mlflow,ltv_model_v2,PROD)",
+                    "urn:li:mlModel:(urn:li:dataPlatform:mlflow,segment_model_v1,PROD)",
+                ]
 
     # Build blast radius from real investigation data
     blast_radius = {
@@ -919,10 +937,14 @@ async def get_system_health():
 
 
 # ─── API: Authentication ──────────────────────────────────────────────────────
+def _hash_password(password: str) -> str:
+    """Hash password with SHA-256 for demo storage. Use bcrypt in production."""
+    return hashlib.sha256(password.encode()).hexdigest()
+
 # In-memory user store for demo (replace with database in production)
 _DEMO_USERS: dict[str, dict] = {
-    "admin@meridian.ai": {"password": "meridian", "role": "admin", "name": "Admin"},
-    "demo@meridian.ai": {"password": "demo", "role": "viewer", "name": "Demo User"},
+    "admin@meridian.ai": {"password": _hash_password("meridian123"), "role": "admin", "name": "Admin"},
+    "demo@meridian.ai": {"password": _hash_password("demo1234"), "role": "viewer", "name": "Demo User"},
 }
 
 
@@ -941,7 +963,7 @@ async def login(request: Request):
         return JSONResponse(status_code=400, content={"error": "email and password are required"})
 
     user = _DEMO_USERS.get(email)
-    if not user or user["password"] != password:
+    if not user or user["password"] != _hash_password(password):
         return JSONResponse(status_code=401, content={"error": "Invalid credentials"})
 
     from backend.auth import create_access_token
@@ -967,12 +989,12 @@ async def register(request: Request):
 
     if not email or not password:
         return JSONResponse(status_code=400, content={"error": "email and password are required"})
-    if len(password) < 4:
-        return JSONResponse(status_code=400, content={"error": "password must be at least 4 characters"})
+    if len(password) < 8:
+        return JSONResponse(status_code=400, content={"error": "password must be at least 8 characters"})
     if email in _DEMO_USERS:
         return JSONResponse(status_code=409, content={"error": "User already exists"})
 
-    _DEMO_USERS[email] = {"password": password, "role": "viewer", "name": name}
+    _DEMO_USERS[email] = {"password": _hash_password(password), "role": "viewer", "name": name}
 
     from backend.auth import create_access_token
     token = create_access_token({"sub": email, "role": "viewer", "name": name})

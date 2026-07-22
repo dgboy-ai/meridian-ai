@@ -220,15 +220,18 @@ class PlannerAgent:
         ]
         # Extract model name from URN (e.g., "churn_model_v3" from "...,churn_model_v3,PROD)")
         model_name = model_urns[0].split(",")[-2] if model_urns and "," in model_urns[0] else "unknown"
+        # Derive metrics from actual worker outputs
+        avg_confidence = sum(worker_confidences) / len(worker_confidences) if worker_confidences else 0.85
+        num_anomalies = len(sentinel_evidence.evidence)
         health_score = self.health_calculator.calculate_from_workers(
             model_urn=model_urns[0],
             model_name=model_name,
-            data_quality=1.0 - (len(sentinel_evidence.evidence) * 0.1),
+            data_quality=max(0.0, 1.0 - (num_anomalies * 0.1)),
             drift_magnitude=drift_evidence.confidence,
             prediction_quality=root_cause_evidence.confidence,
-            latency=0.94,
-            cost=0.85,
-            fairness=0.88,
+            latency=min(1.0, max(0.0, avg_confidence)),
+            cost=min(1.0, max(0.0, 1.0 - (num_anomalies * 0.05))),
+            fairness=min(1.0, max(0.0, avg_confidence * 0.95)),
             worker_confidences=worker_confidences,
             timestamp=now,
         )

@@ -1,6 +1,7 @@
 """Centralized Pydantic BaseSettings configuration for Meridian AI."""
 
-from pydantic import Field
+import secrets
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -40,13 +41,19 @@ class AuthSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="AUTH_")
 
     enabled: bool = Field(default=False, description="Enable JWT authentication")
-    secret_key: str = Field(default="change-me-in-production", description="JWT secret key")
+    secret_key: str = Field(default="", description="JWT secret key (auto-generated if empty)")
     algorithm: str = Field(default="HS256", description="JWT signing algorithm")
     access_token_expire_minutes: int = Field(default=30, description="Token expiry in minutes")
     public_paths: list[str] = Field(
         default=["/health", "/health/ready", "/health/live", "/docs", "/openapi.json", "/redoc"],
         description="Paths that bypass authentication",
     )
+
+    @model_validator(mode="after")
+    def _auto_generate_secret(self) -> "AuthSettings":
+        if not self.secret_key:
+            self.secret_key = secrets.token_hex(32)
+        return self
 
 
 class CORSSettings(BaseSettings):
