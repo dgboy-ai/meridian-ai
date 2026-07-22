@@ -1,217 +1,58 @@
 # Meridian AI
 
-Silent ML failures cost $45,000/day.
-Most teams don't notice for 3 days.
-We catch them in 8 minutes.
-And the next one takes 3.
+> **The AI Reliability Engineer that makes DataHub smarter every time an ML incident occurs.**
 
-[![Cost: $0](https://img.shields.io/badge/Cost-$0-brightgreen)](#)
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue)](#)
-[![DataHub Tools: 15](https://img.shields.io/badge/DataHub%20Tools-15-purple)](#)
-[![Workers: 18](https://img.shields.io/badge/Workers-18-orange)](#)
-[![Tests: 552](https://img.shields.io/badge/Tests-552-green)](#)
-[![DSA: 11](https://img.shields.io/badge/DSA%20Algorithms-11-blue)](#)
+Silent ML failures cost $45,000/day. Most teams don't notice for 3 days. Meridian AI catches them in 8 minutes. And the next one takes 3 — because the knowledge base learned.
 
-## What is Meridian AI?
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue)](#license)
+[![Tests: 552](https://img.shields.io/badge/Tests-552-green)](#technical-execution)
+[![DataHub Tools: 15](https://img.shields.io/badge/DataHub%20Tools-15-purple)](#datahub-integration)
+[![Workers: 18](https://img.shields.io/badge/Workers-18-orange)](#architecture)
 
-Meridian AI is an **AI Reliability Engineer** that autonomously investigates production ML incidents, writes operational knowledge back into DataHub permanently, and ensures every future engineer — and every future AI agent — starts with everything the previous investigation learned.
-
-**Primary challenge:** Production ML Agents
-**Secondary claim:** Agents That Do Real Work
+---
 
 ## The Problem
 
-| Statistic | Implication |
-|---|---|
-| AI incidents rose **55% YoY** | ML failures are accelerating |
-| **77% of ML teams** have no monitoring | Our target audience |
-| Poor data quality costs **$12.9M-$13.95M/year** | Massive financial incentive |
-| Context-aware platforms cut outage resolution by **58%** | Our exact value proposition |
+Production ML models fail silently. When they do, engineers spend 45+ minutes tracing lineage, reading stale docs, and searching Slack for context that should live in the metadata platform. The knowledge from each investigation vanishes — the next incident starts from zero.
+
+| Statistic | Source | Implication |
+|-----------|--------|-------------|
+| AI incidents rose **55% YoY** | Stanford HAI 2026 | ML failures are accelerating |
+| **77% of ML teams** have no monitoring | Peer-reviewed study | Our target audience |
+| Poor data quality costs **$12.9M-$13.95M/year** | Gartner / IBM / IDC | Massive financial incentive |
+| Context-aware platforms cut resolution by **58%** | IDC March 2026 | Our exact value proposition |
+
+**DataHub has MLModel entities but no automated investigation.** It can detect problems (assertions), but can't diagnose root cause, trace through ML lineage, or write knowledge back. That's the gap Meridian fills.
+
+---
 
 ## The Solution
 
 **Every investigation becomes organizational memory.**
 
+Meridian AI reads your DataHub context graph — lineage, schemas, ownership, ML metadata — detects anomalies, traces root cause through column-level lineage, and writes everything it learned back into DataHub permanently. The next time this model breaks, the agent already knows what to do.
+
 ```
-Predict -> Prevent -> Detect -> Diagnose -> Remediate -> Learn
+Detect → Diagnose → Remediate → Learn → DataHub gets smarter
 ```
 
 ### What Gets Written Back to DataHub
 
 After every investigation, **5 artifacts exist in DataHub**:
 
-1. **Root Cause Report** — full investigation with evidence chain
-2. **Reflexion Playbook** — updated after every resolution, gets faster
-3. **AI Knowledge Panel** — structured properties on model entities
-4. **Incident Record** — linked to all affected entities
-5. **EU AI Act Technical File** — SHA-256 audit trail for compliance
+| Artifact | Location | What It Shows |
+|----------|----------|---------------|
+| Root Cause Report | Knowledge Base | Full investigation with evidence chain |
+| Reflexion Playbook | Knowledge Base | Improved after every incident |
+| AI Knowledge Panel | Model entity page | Health score, confidence, resolved incidents |
+| Incident Record | Incidents API | Linked to all affected entities |
+| EU AI Act Technical File | Knowledge Base | SHA-256 audit trail for compliance |
 
-## Run in 5 minutes
+---
 
-### Option 1: Mock Mode (Works Instantly — No Setup Required)
+## The Flywheel
 
-```bash
-git clone https://github.com/trueboy1123/meridian-ai
-cd meridian-ai
-pip install -e .
-meridian investigate "urn:li:mlModel:(urn:li:dataPlatform:mlflow,churn_model_v3,PROD)"
-```
-
-See 14+ workers fire, 17 DataHub mutations, compliance chain generated. **All in mock mode — no DataHub required.**
-
-### Option 2: API Server (Mock Mode)
-
-```bash
-pip install -e .
-python -m backend.main
-# Open http://localhost:8000/docs
-```
-
-### Option 3: Full Stack with Real DataHub
-
-```bash
-# Requires Docker Desktop running
-docker compose up -d
-# Wait ~90s for DataHub
-python scripts/seed_meridian.py
-
-# Switch to real mode
-export DATAHUB_MOCK=false
-export DATAHUB_GMS_URL=http://localhost:8080/api/gms
-python -m backend.main
-```
-
-Open http://localhost:9002 (DataHub UI) + http://localhost:8000/docs (API)
-
-### Option 4: Test with Real DataHub (Advanced)
-
-```bash
-# 1. Start DataHub
-docker compose up -d datahub-gms
-
-# 2. Configure for real mode
-export DATAHUB_MOCK=false
-export DATAHUB_GMS_URL=http://localhost:8080/api/gms
-export DATAHUB_GMS_TOKEN=your-token-here
-export DATAHUB_AUTH_MODE=service_account
-
-# 3. Seed demo data
-python scripts/seed_meridian.py
-
-# 4. Run investigation
-python -m backend.main
-# or
-meridian investigate "urn:li:mlModel:(urn:li:dataPlatform:mlflow,churn_model_v3,PROD)"
-```
-
-Open http://localhost:9002 (DataHub) + http://localhost:8000/docs (API)
-
-### Option 4: Verify Examples (no running needed)
-
-```bash
-python scripts/regenerate_examples.py
-# Check examples/ folder for generated output
-```
-
-## Architecture
-
-```
-+---------------------------------------------------+
-|                    TRIGGER                         |
-|  Scheduled scan / Event / User request             |
-+-------------------+-------------------------------+
-                    |
-+-------------------v-------------------------------+
-|              PLANNER AGENT (18 workers)             |
-|  Detects -> Diagnoses -> Remediates -> Learns      |
-|  AutonomyManager gates each worker                 |
-|  HealthScore computed from real worker confidence   |
-|  Resolution time measured via time.perf_counter()   |
-+-------------------+-------------------------------+
-                    |
-+----------+--------+----------+-------------------+
-| DETECTION|  DIAGNOSIS        |    ENFORCEMENT    |
-|          |                   |                   |
-| Sentinel |  Root Cause       |  Knowledge Writer |
-| Drift    |  Explanation Drift|  Contract Enforcer|
-| Skew     |                   |  Self-Healing     |
-| Leakage  |                   |  Lifecycle Gov    |
-+----------+-------------------+-------------------+
-                    |
-+-------------------v-------------------------------+
-|           DETERMINISTIC VALIDATION                  |
-|  Confidence > 0.7 / Entity exists / Safe ops       |
-+-------------------+-------------------------------+
-                    |
-+-------------------v-------------------------------+
-|           WRITE-BACK TO DATAHUB                     |
-|  Knowledge Base / Structured Properties / Tags      |
-|  EU AI Act Audit Chain (SHA-256)                    |
-+---------------------------------------------------+
-```
-
-## 18 Workers (All Computing Real Things)
-
-Every worker uses real computation, not LLM guessing:
-
-| Worker | What It Computes | Real Math |
-|---|---|---|
-| **Planner Agent** | Orchestrates investigation, assigns workers | LLM decomposition + progressive autonomy |
-| **Data Sentinel** | Schema diff + freshness + PII + data quality + volume | `compute_schema_diff`, `PIIScanner` |
-| **Feature Drift** | PSI/KS per feature + type mismatch | `population_stability_index`, `ks_test` |
-| **Training-Serving Skew** | Schema comparison + distribution drift | `type_mismatch_check`, `feature_drift_score` |
-| **Data Leakage** | Temporal pattern detection | `check_temporal_leakage` |
-| **Root Cause** | Column-level lineage traversal + blast radius | `traverse_column_lineage`, `compute_blast_radius` |
-| **Knowledge Writer** | 5 DataHub writes per investigation | Reads state, increments counters |
-| **Reflexion Loop** | Self-RAG playbook improvement | Extracts prior time from playbooks |
-| **Lifecycle Governance** | Health evaluation + proposals | Threshold-based decisions |
-| **EU AI Act Compliance** | SHA-256 audit chain + Technical File | `hashlib.sha256`, chain verification |
-| **Shadow AI Discovery** | Governance gap detection | `detect_governance_gaps` |
-| **Contract Enforcer** | Assertion checking + quarantine | Threshold-based decisions |
-| **Explanation Drift** | Feature importance shift detection | PSI on importance distributions |
-| **Self-Healing Assertions** | Generates preventive assertions | Pattern-to-assertion mapping |
-| **Pipeline Circuit Breaker** | Halts downstream when upstream fails | Lineage-based impact analysis |
-| **Deprecation Advisor** | Safely deprecates unused assets | Lineage verification |
-| **VerifierAgent** | Challenges RootCause before write-back | Maker-checker validation |
-| **Validation Layer** | 4 checks before any write | Confidence + entity + safety + duplicate |
-
-## DataHub Integration (15 Capabilities)
-
-Meridian AI uses DataHub's full context graph — not just reading metadata, but writing knowledge back so DataHub itself becomes smarter.
-
-### Read Operations (MCP Server)
-| Capability | Purpose | Used By |
-|---|---|---|
-| `search` | Find production assets by query/tags | DataSentinel, RootCause |
-| `get_entities` | Batch metadata for any entity | All workers |
-| `get_lineage` | Upstream/downstream traversal | RootCause, PipelineCircuitBreaker |
-| `get_lineage_paths_between` | Exact path between two entities | Blast radius calculation |
-| `list_schema_fields` | Column-level metadata | DataSentinel, FeatureDrift |
-| `get_dataset_queries` | Real SQL referencing datasets | DataSentinel |
-| `search_documents` | Find past playbooks in Knowledge Base | ReflexionLoop |
-
-### Write Operations (MCP + GraphQL)
-| Capability | Purpose | Used By |
-|---|---|---|
-| `save_document` | Persist root cause reports + playbooks | KnowledgeWriter, ReflexionLoop |
-| `add_structured_properties` | Update AI Knowledge panels on entities | KnowledgeWriter, DataSentinel |
-| `raise_incident` | Create incidents programmatically | KnowledgeWriter |
-| `batch_add_tags` | Tag all affected assets in bulk | KnowledgeWriter, ContractEnforcer |
-| `update_incident_status` | Close/resolved incidents | KnowledgeWriter |
-
-### Governance & Proposals
-| Capability | Purpose | Used By |
-|---|---|---|
-| `propose_lifecycle_stage` | Propose DEPRECATED for failing models | LifecycleGovernance |
-| `list_pending_proposals` | Check queued proposals | LifecycleGovernance |
-
-### Orchestration
-| Capability | Purpose |
-|---|---|
-| **Actions Framework YAML** | Auto-triggers investigation on schema change events |
-| **Dual-Mode Client** | Mock mode (instant) / Real mode (auto-detects DataHub GMS) |
-
-## The Flywheel (Proven in examples/)
+This is what makes Meridian different from every other monitoring tool. The knowledge base compounds.
 
 ```
 Incident #12:  18 min  (first occurrence — playbook created from scratch)
@@ -219,154 +60,223 @@ Incident #28:   8 min  (same pattern — playbook retrieved, resolution suggeste
 Incident #42:   3 min  (pattern matched instantly — knowledge applied)
 ```
 
-**83% faster** from first to third occurrence. The knowledge base compounds.
-See `examples/resolution_times.json` for computed data.
+**83% faster** from first to third occurrence. Verified in `examples/resolution_times.json`.
+
+---
+
+## Quick Start (30 seconds)
+
+```bash
+git clone https://github.com/dgboy-ai/meridian-ai
+cd meridian-ai
+pip install -e .
+meridian investigate "urn:li:mlModel:(urn:li:dataPlatform:mlflow,churn_model_v3,PROD)"
+```
+
+17 workers fire, 17 DataHub mutations generated, EU AI Act compliance chain produced. **No Docker, no DataHub, no API keys required.**
+
+### Other Options
+
+| Method | Command | What You See |
+|--------|---------|-------------|
+| **CLI** | `meridian investigate "..."` | Full investigation in terminal |
+| **API Server** | `python -m backend.main` | Interactive docs at localhost:8000/docs |
+| **Full Stack** | `docker compose up -d` | Meridian UI + DataHub UI + API |
+| **Examples** | `python scripts/regenerate_examples.py` | Pre-generated outputs in examples/ |
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    TRIGGER                               │
+│  Scheduled scan · Actions Framework · User request       │
+└─────────────────────────┬───────────────────────────────┘
+                          │
+┌─────────────────────────▼───────────────────────────────┐
+│              PLANNER AGENT (18 workers)                  │
+│  Detects → Diagnoses → Remediates → Learns              │
+│  Progressive Autonomy gates each worker                  │
+│  HealthScore computed from real worker confidence        │
+└─────────────────────────┬───────────────────────────────┘
+                          │
+┌─────────────────────────▼───────────────────────────────┐
+│              DETERMINISTIC VALIDATION                     │
+│  Confidence > 0.7 · Entity exists · Safe ops             │
+│  Maker-checker: VerifierAgent challenges RootCause       │
+└─────────────────────────┬───────────────────────────────┘
+                          │
+┌─────────────────────────▼───────────────────────────────┐
+│              WRITE-BACK TO DATAHUB                       │
+│  5 artifacts per investigation                           │
+│  Root cause · Playbook · AI Knowledge · Incident · Audit │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## DataHub Integration (15 Capabilities)
+
+Meridian doesn't just read DataHub — it writes knowledge back so DataHub itself becomes smarter.
+
+### Read (MCP Server)
+| Capability | Purpose |
+|------------|---------|
+| `search` | Find production assets by query |
+| `get_entities` | Batch metadata for any entity |
+| `get_lineage` | Upstream/downstream traversal |
+| `get_lineage_paths_between` | Exact path between two entities |
+| `list_schema_fields` | Column-level metadata |
+| `get_dataset_queries` | Real SQL referencing datasets |
+| `search_documents` | Find past playbooks |
+
+### Write (MCP + GraphQL)
+| Capability | Purpose |
+|------------|---------|
+| `save_document` | Persist root cause reports + playbooks |
+| `add_structured_properties` | Update AI Knowledge panels |
+| `raise_incident` | Create incidents programmatically |
+| `batch_add_tags` | Tag all affected assets |
+| `update_incident_status` | Close/resolved incidents |
+
+### Governance
+| Capability | Purpose |
+|------------|---------|
+| `propose_lifecycle_stage` | Propose DEPRECATED for failing models |
+| `list_pending_proposals` | Check queued governance proposals |
+
+### Orchestration
+- **Actions Framework YAML** — Auto-triggers investigation on schema change events
+- **MCP Server** — Meridian exposes itself as MCP tools for other agents
+
+---
+
+## Workers (18 — All Computing Real Things)
+
+Every worker uses real computation, not LLM guessing.
+
+| Worker | Phase | Real Math |
+|--------|-------|-----------|
+| Data Sentinel | Detection | `compute_schema_diff`, `PIIScanner` |
+| Feature Drift | Detection | `population_stability_index`, `ks_test` |
+| Training-Serving Skew | Detection | `type_mismatch_check`, `feature_drift_score` |
+| Data Leakage | Detection | `check_temporal_leakage` |
+| Root Cause | Diagnosis | `traverse_column_lineage`, `compute_blast_radius` |
+| VerifierAgent | Verification | Maker-checker validation |
+| Knowledge Writer | Enforcement | 5 DataHub writes per investigation |
+| Reflexion Loop | Learning | Self-RAG playbook improvement |
+| Lifecycle Governance | Governance | Health evaluation + proposals |
+| EU AI Act Compliance | Compliance | SHA-256 audit chain + Technical File |
+| Shadow AI Discovery | Governance | Ungoverned model detection |
+| Contract Enforcer | Enforcement | Assertion checking + quarantine |
+| Explanation Drift | Detection | PSI on importance distributions |
+| Self-Healing Assertions | Learning | Preventive assertion generation |
+| Pipeline Circuit Breaker | Enforcement | Halts downstream on upstream failure |
+| Deprecation Advisor | Governance | Safe deprecation of unused assets |
+| ML Metadata Integrator | Detection | MLModelDeployment, MLFeatureTable queries |
+| Validation Layer | Safety | 4 checks before any write |
+
+---
+
+## Technical Execution
+
+- **552 tests** passing (unit, integration, e2e) — CI on Python 3.11/3.12/3.13
+- **Deterministic Validation Layer** — 4 checks: confidence > 0.7, entity exists, safe ops, no duplicates
+- **Progressive Autonomy** — 5 levels from Advisory to Self-improving
+- **Maker-Checker** — VerifierAgent challenges RootCause before write-back
+- **Health Score** — 6 weighted metrics computed from real worker confidence
+- **Circuit Breaker** — Monitors agent reasoning health, detects loops/drift
+- **Provenance Tracking** — Tracks which context sources were used per worker
+
+---
+
+## Originality
+
+### Cumulative Intelligence (No Other Tool Does This)
+The reflexion loop writes playbooks to DataHub Knowledge Base after every incident. Future investigations read these playbooks first. Resolution time compounds: 18min → 8min → 3min.
+
+### AI Knowledge Panel
+DataHub entity pages gain intelligence. After an investigation, `churn_model_v3` shows resolved_incidents, known_failure_patterns, confidence, recommended playbook — all AI-maintained.
+
+### EU AI Act Compliance
+SHA-256 audit chain for Articles 12 (Record-Keeping), 13 (Transparency), 14 (Human Oversight). Technical File generated per investigation. **Enforcement: August 2, 2026** — 22 days before hackathon deadline.
+
+### Self-Healing Assertions
+Generates preventive dataset contract assertions from incident patterns. Each investigation makes the system more resilient.
+
+---
+
+## Real-World Usefulness
+
+- **$45K/day at risk** — 32K predictions/day × $1.41/prediction during silent degradation
+- **4 personas** — ML Platform Engineer, Data Engineer, MLOps Lead, Enterprise Data Architect
+- **EU AI Act enforcement imminent** — compliance is no longer optional
+- **Zero-friction demo** — mock mode works instantly, full stack in 5 minutes
+
+---
 
 ## Tech Stack
 
 | Layer | Technology |
-|---|---|
-| Backend | Python FastAPI (async) |
-| LLM Inference | Groq (Llama 3 70B) |
-| DataHub Integration | DataHub MCP Client (dual-mode: real + mock) |
-| Statistical Computation | PSI, KS-test, schema diff (pure Python) |
+|-------|-----------|
+| Backend | Python 3.11+ FastAPI (async) |
+| LLM | Groq (Llama 3 70B) — $0 via free tier |
+| DataHub | MCP Server + GraphQL (dual-mode: real + mock) |
+| Statistics | PSI, KS-test, schema diff (pure Python) |
 | Compliance | EU AI Act SHA-256 audit chain |
-| Frontend | Next.js + Framer Motion |
-| Deployment | Docker Compose (MySQL + Kafka + ES + DataHub) |
+| Frontend | Next.js 14 + Framer Motion |
+| Deployment | Docker Compose (DataHub + MySQL + Kafka + ES) |
 
-## 16 Production-Ready Features
+---
 
-### Core Investigation
-- **Column-Level Lineage** — Traces exact column dependencies through lineage graph
-- **Pipeline Circuit Breaker** — Halts downstream pipelines when upstream quality fails
-- **Safe Deprecation Advisor** — Identifies and safely deprecates unused datasets
-- **VerifierAgent** — Challenges RootCause conclusions before write-back
+## Example Outputs
 
-### Intelligence & Learning
-- **Reflexion Loop** — Self-RAG playbook improvement after every incident
-- **Semantic Search** — Vector-based playbook retrieval
-- **Adaptive Assertions** — Learns from historical patterns
-- **Training Data Versioning** — Records training data versions for reproducibility
-
-### Compliance & Governance
-- **EU AI Act Compliance** — SHA-256 audit chain for Articles 12, 13, 14
-- **Bias Detection Lineage** — Checks for demographic skew, label imbalance
-- **PII Propagation** — Tracks PII flow through lineage to downstream columns
-- **SLA Compliance Tracking** — Tracks model health SLAs
-
-### Agent Safety
-- **Agentic Circuit Breaker** — Monitors agent reasoning health, detects loops/drift
-- **Provenance Validation** — Validates context before LLM calls
-- **Agent Provenance Tracking** — Tracks which context sources were used
-- **Saga Pattern** — Compensating transactions for data integrity
-
-### ML Metadata
-- **ML Metadata Deep Integration** — Queries MLModelDeployment, MLFeatureTable, MLModelGroup
-- **Volume Monitoring** — Row count tracking and volume detection
-
-### Observability
-- **Cost Attribution** — Tracks tokens, compute cost, and ROI per investigation
-- **OpenTelemetry Spans** — Distributed tracing for each worker
-
-## How We Meet the Judging Criteria
-
-### Use of DataHub (Scored: 15 capabilities, read + write + governance)
-We don't just read DataHub — we write knowledge back so DataHub itself becomes smarter.
-- **7 MCP read tools**: search, get_entities, get_lineage, get_lineage_paths_between, list_schema_fields, get_dataset_queries, search_documents
-- **5 write tools**: save_document, add_structured_properties, raise_incident, batch_add_tags, update_incident_status
-- **2 governance tools**: propose_lifecycle_stage, list_pending_proposals
-- **Actions Framework YAML**: Auto-triggers investigation when DataHub detects a schema change — zero human intervention
-- **5 artifacts per investigation**: Root cause report, reflexion playbook, AI Knowledge panel, incident record, EU AI Act Technical File — all written to DataHub
-
-### Technical Execution (Scored: 552 tests, production patterns)
-- **18 workers** with structured evidence objects (finding, confidence, severity, evidence[], business_impact, datahub_mutations[])
-- **Deterministic Validation Layer**: 4 checks before any write — confidence > 0.7, entity exists, safe operations, no duplicates
-- **Maker-Checker**: VerifierAgent challenges RootCause conclusions before write-back
-- **Progressive Autonomy**: 5 levels (Advisory → Self-improving) — agents ask permission for irreversible actions
-- **Health Score**: 6 weighted metrics computed from real worker confidence, not arbitrary numbers
-- **CI pipeline**: pytest on Python 3.11/3.12/3.13, ruff linting, example regeneration verification
-- **MCP Server**: Meridian AI exposes itself as MCP tools — any agent can trigger investigations via Model Context Protocol
-
-### Originality (Scored: 4 genuinely novel capabilities)
-- **Cumulative intelligence**: Resolution time improves 18min → 8min → 3min (83% faster). The reflexion loop writes playbooks to DataHub Knowledge Base after every incident. No other monitoring tool compounds knowledge this way.
-- **AI Knowledge Panel**: DataHub entity pages gain intelligence. After an investigation, `churn_model_v3` shows resolved_incidents: 15, known_failure_patterns, confidence, recommended playbook — all AI-maintained.
-- **EU AI Act compliance**: SHA-256 audit chain for Articles 12 (Record-Keeping), 13 (Transparency), 14 (Human Oversight). Technical File generated per investigation. Enforcement: August 2, 2026.
-- **Self-healing assertions**: Generates preventive dataset contract assertions from incident patterns.
-
-### Real-World Usefulness (Scored: solves a problem practitioners actually face)
-- **$45K/day at risk**: 32K predictions/day × $1.41/prediction during silent ML degradation
-- **4 personas with clear workflows**: ML Platform Engineer (daily health), Data Engineer (investigation), MLOps Lead (resolution trends), Enterprise Data Architect (compliance)
-- **EU AI Act enforcement August 2, 2026**: 22 days before hackathon deadline. Compliance is no longer optional.
-- **Zero-friction demo**: Mock mode works instantly with no dependencies. Full stack with real DataHub in 5 minutes via Docker Compose.
-
-### Example Outputs (Provable)
-
-All examples in `examples/` are generated by `scripts/regenerate_examples.py`:
+All examples in `examples/` are generated by real worker output. Judges can verify:
 
 ```bash
 python scripts/regenerate_examples.py
-# Generates all files from real worker output
-# Judges can verify by running this command
 ```
 
-- `examples/incident_42_timeline.json` — 36 events, 17 workers
-- `examples/incident_42_summary.json` — health=89, mutations=17
-- `examples/ai-knowledge/churn_model_v3.json` — resolved_incidents: 15
-- `examples/reports/incident_042_root_cause.md` — generated report
-- `examples/playbooks/schema_change_playbook.md` — reflexion playbook
-- `examples/resolution_times.json` — flywheel proof
+| File | What It Shows |
+|------|---------------|
+| `ai-knowledge/churn_model_v3.json` | AI Knowledge panel: health=89, confidence=0.94, resolved=15 |
+| `resolution_times.json` | Flywheel: 18min → 8min → 3min (83% improvement) |
+| `incident_42_timeline.json` | Full investigation: 36 events, 17 workers |
+| `incident_42_summary.json` | 17 mutations, validation_passed=true |
+| `reports/incident_042_root_cause.md` | Generated root cause report |
+| `playbooks/schema_change_playbook.md` | Reflexion playbook |
+| `incidents/incident_042_full.json` | Full incident record with blast radius |
+
+---
 
 ## For Judges
 
-### How to Verify (Pick One)
+### 3 Ways to Verify
 
-| Method | Time | What You See |
-|---|---|---|
-| **CLI** | 30 sec | `pip install -e . && meridian investigate "urn:li:mlModel:(urn:li:dataPlatform:mlflow,churn_model_v3,PROD)"` — 17 workers fire, 17 DataHub mutations, compliance chain generated |
-| **Examples** | 10 sec | `python scripts/regenerate_examples.py` — check `examples/` for generated outputs |
-| **Full Stack** | 5 min | `docker compose up -d` — Meridian UI at :3000, DataHub at :9002, API at :8000 |
-| **Architecture** | Read | `backend/workers/` (17 specialized workers), `backend/stats.py` (real math), `backend/validation.py` (4-layer safety) |
+| Method | Time | Command |
+|--------|------|---------|
+| **CLI** | 30 sec | `pip install -e . && meridian investigate "urn:li:mlModel:(urn:li:dataPlatform:mlflow,churn_model_v3,PROD)"` |
+| **Examples** | 10 sec | `python scripts/regenerate_examples.py` |
+| **Full Stack** | 5 min | `docker compose up -d` → localhost:3000 |
 
-### What to Look For
+### What to Look For (By Criterion)
 
 | Criterion | Evidence |
-|---|---|
-| **Use of DataHub** | `backend/clients/datahub_client.py` — 15 DataHub capabilities (7 read + 5 write + 2 governance + Actions Framework) |
-| **Technical Execution** | 552 tests passing, `backend/validation.py` (deterministic checks), `backend/autonomy.py` (5-level progressive autonomy) |
-| **Originality** | `examples/resolution_times.json` (18→8→3 min flywheel), `examples/ai-knowledge/churn_model_v3.json` (AI Knowledge panel), `backend/workers/eu_ai_act_compliance.py` (SHA-256 audit chain) |
-| **Real-World Usefulness** | `backend/health_score.py` (6 weighted metrics), `backend/cost_tracker.py` (ROI tracking), 4 personas in README |
-| **Submission Quality** | `examples/` folder (7 generated files), `scripts/regenerate_examples.py` (provable generation) |
+|-----------|----------|
+| **Use of DataHub** | 15 capabilities (7 read + 5 write + 2 governance + Actions Framework) in `backend/clients/datahub_client.py` |
+| **Technical Execution** | 552 tests, `backend/validation.py` (4 checks), `backend/autonomy.py` (5 levels) |
+| **Originality** | `examples/resolution_times.json` (flywheel), `backend/workers/eu_ai_act_compliance.py` (SHA-256 audit) |
+| **Real-World Usefulness** | `backend/health_score.py` (6 metrics), `backend/cost_tracker.py` (ROI), 4 personas |
+| **Submission Quality** | `examples/` (7 files), `scripts/regenerate_examples.py` (provable) |
 
-## DataHub Integration (14 Tools)
+---
 
-### Read Operations
-| Tool | Purpose | Used By |
-|------|---------|---------|
-| `search` | Find entities by query | DataSentinel, RootCause |
-| `get_entities` | Fetch entity metadata | All workers |
-| `get_lineage` | Traverse upstream/downstream | RootCause, PipelineCircuitBreaker |
-| `list_schema_fields` | Get column metadata | DataSentinel, FeatureDrift |
-| `search_documents` | Find past playbooks | ReflexionLoop |
-
-### Write Operations (5 artifacts per investigation)
-| Tool | Purpose | Used By |
-|------|---------|---------|
-| `save_document` | Persist root cause reports, playbooks | KnowledgeWriter, ReflexionLoop |
-| `add_structured_properties` | Update AI Knowledge panel | KnowledgeWriter, DataSentinel |
-| `raise_incident` | Create incidents | KnowledgeWriter, DataSentinel |
-| `batch_add_tags` | Tag affected assets | KnowledgeWriter, ContractEnforcer |
-
-### Dual-Mode Client
-- **Mock mode**: Instant startup, no DataHub required (default)
-- **Real mode**: Auto-detects DataHub GMS, uses async httpx
-- **Switch**: `export DATAHUB_MOCK=false && export DATAHUB_GMS_URL=http://localhost:8080/api/gms`
-
-## DSA Algorithms (11 Implemented)
+## DSA Algorithms (11)
 
 | Algorithm | Complexity | Purpose |
 |-----------|------------|---------|
-| BFS Lineage | O(V+E) | Multi-hop lineage traversal |
-| DFS Lineage | O(V+E) | Deep graph exploration |
+| BFS/DFS Lineage | O(V+E) | Multi-hop lineage traversal |
 | Topological Sort | O(V+E) | Pipeline dependency ordering |
 | Cycle Detection | O(V+E) | Graph validation |
 | Shortest Path | O(V+E) | Fastest propagation path |
@@ -376,6 +286,8 @@ python scripts/regenerate_examples.py
 | Union-Find | O(α(n)) | Connectivity queries |
 | Trie | O(m) | Entity prefix search |
 | Min-Heap Top-K | O(n log k) | Fast top-k selection |
+
+---
 
 ## License
 
