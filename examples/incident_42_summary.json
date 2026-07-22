@@ -61,7 +61,7 @@
             "source_type": "datahub_metadata",
             "source_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,meridian.raw_events,PROD)",
             "source_name": "Dataset metadata",
-            "retrieved_at": 1784579350.1652067,
+            "retrieved_at": 1784760561.9882905,
             "freshness_seconds": 0.0,
             "confidence": 1.0,
             "verified": true,
