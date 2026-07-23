@@ -1,217 +1,175 @@
-# Meridian AI API Reference
+# Meridian AI — API Reference
 
-Base URL: `http://localhost:8000`
+> REST API endpoints, MCP Server tools, and CLI commands.
 
-All responses include `X-Request-ID` and `X-Response-Time` headers. Rate limit: 60 req/min (configurable via `MAX_RPM`).
+## REST API Endpoints
 
----
+### Health & Monitoring
 
-## Authentication
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Basic health check |
+| GET | `/health/ready` | Readiness probe (dependencies) |
+| GET | `/health/live` | Liveness probe |
+| GET | `/metrics` | Prometheus-compatible metrics |
 
-Meridian AI supports two auth modes for DataHub GMS:
+### Incidents
 
-- **PAT (default)** — Bearer token from `DATAHUB_GMS_TOKEN`
-- **Service Account** — set `DATAHUB_AUTH_MODE=service_account`
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/incidents` | List all incidents |
+| GET | `/api/incidents/{id}` | Get incident details |
+| POST | `/api/investigate` | Start a live investigation |
 
-When `DATAHUB_MOCK=true` (default), no DataHub connection is needed.
+### Models
 
-Groq LLM calls use `GROQ_API_KEY` from environment. Without it, the client falls back to mock responses.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/models/{name}` | Get model metadata |
+| GET | `/api/health-scores` | Get health scores for all models |
 
----
+### Analytics
 
-## Health Checks
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/resolution-times` | Get resolution time trends |
+| GET | `/api/costs` | Get cost/ROI summary |
+| GET | `/api/costs/{incident_id}` | Get investigation cost |
+| GET | `/api/provenance/{incident_id}` | Get investigation provenance |
 
-### `GET /health`
-Basic liveness check.
+### Actions Framework
 
-```bash
-curl http://localhost:8000/health
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/actions/investigate` | Receive Actions Framework event |
+| GET | `/api/actions/events` | Get all received events |
+| GET | `/api/actions/stats` | Get Actions Framework statistics |
+
+### Compliance
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/compliance/scan-pii` | Scan dataset for PII |
+| GET | `/api/compliance/eu-ai-act/{id}` | Get EU AI Act Technical File |
+| GET | `/api/compliance/audit-trail` | Get full audit trail |
+
+### Discovery
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/discovery/shadow-ai` | Scan for ungoverned models |
+
+### Code Generation
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/generate/dbt` | Generate dbt model from metadata |
+
+### System
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/system/architecture` | System architecture info |
+| GET | `/api/system/health` | Detailed system health |
+
+### SSE Streaming
+
+| Endpoint | Description |
+|----------|-------------|
+| `/stream/replay?incident_id={id}` | Stream pre-recorded investigation |
+| `/stream/investigate?dataset_urn={urn}&mode=live` | Stream live investigation |
+
+### Authentication
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/login` | Authenticate, get JWT token |
+| POST | `/api/auth/register` | Register new user |
+| GET | `/api/auth/me` | Get current user info |
+
+## MCP Server Tools
+
+### Read-Only Tools
+
+| Tool | Description |
+|------|-------------|
+| `search` | Search DataHub with keyword/boolean logic |
+| `get_entities` | Fetch metadata for entities by URN |
+| `get_lineage` | Upstream/downstream lineage with hop control |
+| `get_lineage_paths_between` | Exact paths between two assets |
+| `list_schema_fields` | Column-level metadata |
+| `get_dataset_queries` | Real SQL queries referencing a dataset |
+| `search_documents` | Search knowledge base articles |
+
+### Mutation Tools
+
+| Tool | Description |
+|------|-------------|
+| `add_tags` / `remove_tags` | Manage tags on entities |
+| `add_terms` / `remove_terms` | Manage glossary terms |
+| `add_owners` / `remove_owners` | Manage ownership |
+| `set_domains` / `remove_domains` | Manage domain membership |
+| `update_description` | Update entity descriptions |
+| `add_structured_properties` | Manage typed metadata |
+| `save_document` | Save documents to knowledge base |
+| `propose_lifecycle_stage` | Submit lifecycle stage proposal |
+
+## CLI Commands
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `meridian investigate <urn>` | Run full investigation | `meridian investigate "urn:li:mlModel:..."` |
+| `meridian health <urn>` | Check model health | `meridian health "urn:li:mlModel:..."` |
+| `meridian playbook <id>` | View reflexion playbook | `meridian playbook schema-change-type-mismatch` |
+| `meridian seed` | Seed demo data | `meridian seed` |
+| `meridian serve` | Start API server | `meridian serve --port 8000` |
+
+## Response Formats
+
+### Investigation Result
 
 ```json
 {
-  "status": "healthy",
-  "service": "meridian-ai",
-  "version": "1.0.0",
-  "mode": "mock",
-  "groq_connected": true,
-  "datahub_mock": true
+  "incident_id": "42",
+  "status": "completed",
+  "dataset_urn": "urn:li:dataset:...",
+  "workers_fired": ["data_sentinel", "feature_drift", ...],
+  "resolution_time_minutes": 3.0,
+  "health_score": 89,
+  "datahub_mutations": 17,
+  "timeline_steps": 36,
+  "blast_radius_nodes": 3,
+  "writeback_artifacts": 5
 }
 ```
 
-### `GET /health/ready`
-Readiness probe — checks all subsystems.
-
-```bash
-curl http://localhost:8000/health/ready
-```
-
-### `GET /health/live`
-Simple liveness probe for k8s.
-
-### `GET /metrics`
-Prometheus-compatible metrics (p50/p95/p99 latency, error rate, uptime).
-
-```bash
-curl http://localhost:8000/metrics
-```
-
----
-
-## Incidents
-
-### `GET /api/incidents`
-List all known incidents.
-
-```bash
-curl http://localhost:8000/api/incidents
-```
-
-### `GET /api/incidents/{incident_id}`
-Get a single incident by ID.
-
-```bash
-curl http://localhost:8000/api/incidents/42
-```
-
----
-
-## Models
-
-### `GET /api/models/{model_name}`
-Get ML model metadata (health score, confidence, tags).
-
-```bash
-curl http://localhost:8000/api/models/churn_model_v3
-```
-
-### `GET /api/health-scores`
-Health scores for all registered models.
-
-```bash
-curl http://localhost:8000/api/health-scores
-```
-
----
-
-## Analytics
-
-### `GET /api/resolution-times`
-Resolution time trend across incidents.
-
-```bash
-curl http://localhost:8000/api/resolution-times
-```
-
----
-
-## Actions Framework
-
-### `POST /api/actions/investigate`
-Receive a DataHub Actions Framework event. Triggers investigation for HIGH/CRITICAL severity.
-
-```bash
-curl -X POST http://localhost:8000/api/actions/investigate \
-  -H "Content-Type: application/json" \
-  -d '{
-    "eventType": "UPSTREAM_LINEAGE_CHANGE",
-    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,meridian.raw_events,PROD)",
-    "aspectName": "schemaMetadata"
-  }'
-```
-
-### `GET /api/actions/events`
-List all received events.
-
-### `GET /api/actions/stats`
-Event statistics (total, high-severity, investigations triggered).
-
----
-
-## Compliance
-
-### `POST /api/compliance/scan-pii`
-Scan a dataset for PII exposures.
-
-```bash
-curl -X POST http://localhost:8000/api/compliance/scan-pii \
-  -H "Content-Type: application/json" \
-  -d '{
-    "dataset_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,meridian.raw_events,PROD)"
-  }'
-```
-
-### `GET /api/compliance/eu-ai-act/{incident_id}`
-Get EU AI Act Technical File for an incident.
-
-### `GET /api/compliance/audit-trail`
-Get the full immutable audit trail.
-
----
-
-## Discovery
-
-### `POST /api/discovery/shadow-ai`
-Scan for ungoverned (shadow) ML models.
-
-```bash
-curl -X POST http://localhost:8000/api/discovery/shadow-ai
-```
-
----
-
-## Code Generation
-
-### `POST /api/generate/dbt`
-Generate a dbt model from DataHub metadata.
-
-```bash
-curl -X POST http://localhost:8000/api/generate/dbt \
-  -H "Content-Type: application/json" \
-  -d '{
-    "source_dataset_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,meridian.raw_events,PROD)",
-    "target_model_name": "stg_raw_events"
-  }'
-```
-
----
-
-## Streaming (SSE)
-
-### `GET /stream/replay`
-Stream a pre-recorded investigation via Server-Sent Events.
-
-```bash
-curl "http://localhost:8000/stream/replay?incident_id=42&delay=0.5"
-```
-
-### `GET /stream/investigate`
-Stream a live or replay investigation.
-
-```bash
-curl "http://localhost:8000/stream/investigate?incident_id=42&mode=replay"
-```
-
-Parameters:
-- `dataset_urn` — URN to investigate (default: `urn:li:dataset:(...snowflake,meridian.raw_events,PROD)`)
-- `incident_id` — ID for tracking (default: `42`)
-- `mode` — `live` (real DataHub) or `replay` (pre-recorded, default)
-
----
-
-## Error Responses
-
-| Status | Meaning |
-|--------|---------|
-| 400 | Invalid request body or parameters |
-| 404 | Resource not found |
-| 429 | Rate limit exceeded (check `Retry-After` header) |
-| 500 | Internal server error |
+### Health Score
 
 ```json
 {
-  "error": "Rate limit exceeded",
-  "retry_after": 60,
-  "request_id": "a1b2c3d4"
+  "score": 89,
+  "assessment": "reliable",
+  "confidence": 0.94,
+  "metrics": {
+    "data_quality": 0.72,
+    "drift_magnitude": 0.61,
+    "prediction_quality": 0.96,
+    "latency": 0.94,
+    "cost": 0.85,
+    "fairness": 0.88
+  }
+}
+```
+
+### EU AI Act Audit Record
+
+```json
+{
+  "record_id": "audit-2026-07-12T14:32:00Z",
+  "article": "12",
+  "decision_type": "ROOT_CAUSE_ANALYSIS",
+  "confidence": 0.96,
+  "hash_sha256": "a1b2c3d4...",
+  "previous_hash": "e5f6g7h8..."
 }
 ```

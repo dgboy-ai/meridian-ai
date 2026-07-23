@@ -289,6 +289,18 @@ python scripts/regenerate_examples.py
 
 ---
 
+## Documentation
+
+| Document | Quick Summary | Link |
+|----------|---------------|------|
+| **Features** | Complete catalog: 18 workers, 15 DataHub tools, 11 DSA algorithms, 13 frontend pages | [docs/features.md](docs/features.md) |
+| **Security & Compliance** | JWT auth, password hashing, EU AI Act SHA-256 audit chain, validation layer, progressive autonomy | [docs/security.md](docs/security.md) |
+| **Architecture** | System design, worker pipeline, data flow, component diagram, tech stack | [docs/architecture.md](docs/architecture.md) |
+| **API Reference** | REST endpoints, MCP Server tools, CLI commands, response formats | [docs/api.md](docs/api.md) |
+| **Deployment** | CLI, Docker, Vercel + Render, environment variables, troubleshooting | [docs/deployment.md](docs/deployment.md) |
+
+---
+
 ## License
 
 Apache 2.0 — see [LICENSE](LICENSE)
