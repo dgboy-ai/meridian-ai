@@ -293,6 +293,7 @@ python scripts/regenerate_examples.py
 
 | Document | Quick Summary | Link |
 |----------|---------------|------|
+| **DataHub Integration** | How we use DataHub for each challenge — every tool mapped to a specific problem | [docs/datahub-integration.md](docs/datahub-integration.md) |
 | **Features** | Complete catalog: 18 workers, 15 DataHub tools, 11 DSA algorithms, 13 frontend pages | [docs/features.md](docs/features.md) |
 | **Security & Compliance** | JWT auth, password hashing, EU AI Act SHA-256 audit chain, validation layer, progressive autonomy | [docs/security.md](docs/security.md) |
 | **Architecture** | System design, worker pipeline, data flow, component diagram, tech stack | [docs/architecture.md](docs/architecture.md) |
