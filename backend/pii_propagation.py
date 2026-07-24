@@ -14,13 +14,13 @@ that context through the lineage graph."
 """
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.models import EvidenceObject, Severity, EvidenceItem, DataHubMutation
-from backend.stats import traverse_lineage
+from backend.models import DataHubMutation, EvidenceItem, EvidenceObject, Severity
 from backend.scanners.pii_scanner import PIIScanner
+from backend.stats import traverse_lineage
 
 logger = logging.getLogger("meridian-ai.pii_propagation")
 
@@ -72,7 +72,7 @@ class PIIPropagationTracker:
         Returns:
             EvidenceObject with propagation results
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Get lineage for the source dataset
         lineage = await self.mcp.get_lineage(source_urn, depth=5)
@@ -200,7 +200,7 @@ class PIIPropagationTracker:
         Returns:
             EvidenceObject with scan and propagation results
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Get entity metadata
         entities = await self.mcp.get_entities([dataset_urn])

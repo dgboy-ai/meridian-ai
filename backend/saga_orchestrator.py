@@ -11,9 +11,10 @@ inconsistent state."
 """
 import asyncio
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Callable, Any
+from typing import Any
 
 logger = logging.getLogger("meridian-ai.saga")
 

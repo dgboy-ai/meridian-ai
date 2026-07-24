@@ -11,11 +11,11 @@ This module:
 """
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.models import EvidenceObject, Severity, EvidenceItem, DataHubMutation
+from backend.models import DataHubMutation, EvidenceItem, EvidenceObject, Severity
 
 logger = logging.getLogger("meridian-ai.bias_detector")
 
@@ -59,7 +59,7 @@ class BiasDetector:
             model_urn: URN of the ML model
             training_data_urn: URN of the training dataset (optional, will trace from model)
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Get model metadata
         model_entities = await self.mcp.get_entities([model_urn])

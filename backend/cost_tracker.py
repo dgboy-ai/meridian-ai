@@ -10,8 +10,8 @@ This module tracks:
   - Incidents prevented by assertions
   - ROI calculation: "Investigation cost $0.03. Prevented $45,000/day loss."
 """
-import time
 import logging
+import time
 from dataclasses import dataclass, field
 
 logger = logging.getLogger("meridian-ai.cost_tracker")

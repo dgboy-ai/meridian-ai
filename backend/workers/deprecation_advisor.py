@@ -10,11 +10,11 @@ Before deprecating a dataset, shows full column-level blast radius:
 Based on DPG Media case study:
 "Lineage-powered usage tracking to safely deprecate unused tables, saving 25% in storage costs."
 """
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.models import EvidenceObject, Severity, EvidenceItem, DataHubMutation
+from backend.models import DataHubMutation, EvidenceItem, EvidenceObject, Severity
 from backend.stats import traverse_lineage
 
 
@@ -36,7 +36,7 @@ class DeprecationAdvisor:
             dataset_urn: URN of the dataset to analyze
             days_unused: Number of days without queries to consider unused
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Get entity metadata
         entities = await self.mcp.get_entities([dataset_urn])
@@ -171,7 +171,7 @@ class DeprecationAdvisor:
             days_unused: Number of days without queries to consider unused
             entity_type: Type of entity to scan (dataset, mlModel, etc.)
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Search for entities of the given type
         entities = await self.mcp.search(query="", entity_type=entity_type)

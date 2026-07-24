@@ -3,11 +3,11 @@
 Checks schema for suspicious column naming patterns and SQL queries for
 look-ahead bias. Pure code, no LLM guessing.
 """
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.models import EvidenceObject, Severity, EvidenceItem, DataHubMutation
+from backend.models import DataHubMutation, EvidenceItem, EvidenceObject, Severity
 from backend.stats import check_temporal_leakage
 
 
@@ -18,7 +18,7 @@ class DataLeakageDetector:
 
     async def detect(self, feature_table_urn: str, model_urn: str) -> EvidenceObject:
         """Check for temporal data leakage using real pattern detection."""
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         feature_fields = await self.mcp.list_schema_fields(feature_table_urn)
         feature_entity = (await self.mcp.get_entities([feature_table_urn])) or [{}]

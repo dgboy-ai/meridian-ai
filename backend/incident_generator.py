@@ -7,7 +7,7 @@ This makes the demo realistic — incidents come from real data, not pre-recorde
 """
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
@@ -69,7 +69,7 @@ class IncidentGenerator:
         Returns:
             GeneratedIncident or None if no signals detected
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         self._incident_counter += 1
         incident_id = str(self._incident_counter)
 
@@ -185,7 +185,7 @@ class IncidentGenerator:
 
     def _build_timeline(self, signals: list[dict], incident_id: str) -> list[dict]:
         """Build a timeline from signals."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         timeline = []
 
         # Add detection event

@@ -4,11 +4,11 @@ Checks DataHub assertions (quality checks, schema contracts) and proposes
 lifecycle stage changes for datasets that consistently violate their contracts.
 Datasets that fail assertions repeatedly get quarantined automatically.
 """
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.models import EvidenceObject, Severity, EvidenceItem, DataHubMutation
+from backend.models import DataHubMutation, EvidenceItem, EvidenceObject, Severity
 
 
 class ContractEnforcer:
@@ -33,7 +33,7 @@ class ContractEnforcer:
             total_assertions: Total number of assertions
             consecutive_failures: How many consecutive check cycles failed
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Calculate failure rate
         failure_rate = failed_assertions / max(total_assertions, 1)

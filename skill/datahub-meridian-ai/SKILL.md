@@ -121,7 +121,7 @@ Total: ~12 min first occurrence. ~3 min with this playbook.
 pip install datahub-meridian-ai
 
 # Or from source
-git clone https://github.com/trueboy1123/meridian-ai
+git clone https://github.com/dgboy-ai/meridian-ai
 cd meridian-ai/skill/datahub-meridian-ai
 pip install -e .
 ```

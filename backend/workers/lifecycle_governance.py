@@ -1,9 +1,9 @@
 """Lifecycle Governance worker — proposes DEPRECATED for chronically failing models."""
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.models import EvidenceObject, Severity, DataHubMutation
+from backend.models import DataHubMutation, EvidenceObject, Severity
 
 
 class LifecycleGovernance:
@@ -20,7 +20,7 @@ class LifecycleGovernance:
         pattern_id: str,
         incident_id: str,
     ) -> EvidenceObject:
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Check if proposal already pending
         pending = await self.mcp.list_pending_proposals()

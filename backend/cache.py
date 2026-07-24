@@ -1,7 +1,8 @@
 import functools
 import time
 from collections import OrderedDict
-from typing import Any, Callable, Optional, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 T = TypeVar("T")
 
@@ -14,7 +15,7 @@ class CacheManager:
         self._max_size = max_size
         self._stats = {"hits": 0, "misses": 0, "evictions": 0}
 
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         if key in self._cache:
             value, expiry = self._cache[key]
             if time.time() < expiry:
@@ -54,7 +55,7 @@ def cached(ttl: float = 300) -> Callable[[Callable[..., T]], Callable[..., T]]:
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @functools.wraps(func)
         async def wrapper(*args: Any, **kwargs: Any) -> T:
-            key = f"{func.__name__}:{str(args)}:{str(kwargs)}"
+            key = f"{func.__name__}:{args!s}:{kwargs!s}"
             cached_value = await _cache_manager.get(key)
             if cached_value is not None:
                 return cached_value

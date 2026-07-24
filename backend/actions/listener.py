@@ -8,7 +8,7 @@ dispatches events to the appropriate handler.
 """
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 logger = logging.getLogger("meridian-ai.actions.listener")
 
@@ -22,7 +22,7 @@ class ActionEvent:
         self.aspect = raw.get("aspect", raw.get("aspectName", ""))
         self.old_value = raw.get("old_value", raw.get("oldValue"))
         self.new_value = raw.get("new_value", raw.get("newValue"))
-        self.timestamp = raw.get("timestamp", datetime.now(timezone.utc).isoformat())
+        self.timestamp = raw.get("timestamp", datetime.now(UTC).isoformat())
         self._raw = raw
 
     @property
@@ -80,7 +80,7 @@ class ActionsListener:
 
         investigation_id = None
         if should_investigate:
-            investigation_id = f"AUTO-{int(datetime.now(timezone.utc).timestamp())}"
+            investigation_id = f"AUTO-{int(datetime.now(UTC).timestamp())}"
             logger.info(f"Auto-investigation {investigation_id} triggered for {event.entity_urn}")
 
         return {

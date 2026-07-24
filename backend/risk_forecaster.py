@@ -21,12 +21,12 @@ AFTER; nobody predicts BEFORE."
 """
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.models import EvidenceObject, Severity, EvidenceItem, DataHubMutation
+from backend.models import DataHubMutation, EvidenceItem, EvidenceObject, Severity
 
 logger = logging.getLogger("meridian-ai.risk_forecaster")
 
@@ -106,7 +106,7 @@ class RiskForecaster:
         Returns:
             RiskForecast with risk level, factors, and recommendations
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Get model metadata
         entities = await self.mcp.get_entities([model_urn])
@@ -203,7 +203,7 @@ class RiskForecaster:
         Returns:
             EvidenceObject with risk forecast results
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         forecasts = await self.forecast_all_models()
 
@@ -282,7 +282,7 @@ class RiskForecaster:
                 if last_update:
                     try:
                         last_update_time = datetime.fromisoformat(last_update.replace("Z", "+00:00"))
-                        age_hours = (datetime.now(timezone.utc) - last_update_time).total_seconds() / 3600
+                        age_hours = (datetime.now(UTC) - last_update_time).total_seconds() / 3600
                         if age_hours > 24:  # Stale if > 24 hours
                             stale_count += 1
                     except (ValueError, TypeError):

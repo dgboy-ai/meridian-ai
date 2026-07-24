@@ -15,12 +15,12 @@ Reads current state from DataHub to compute:
 """
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.models import EvidenceObject, Severity, DataHubMutation
 from backend.health_score import HealthScore
+from backend.models import DataHubMutation, EvidenceObject, Severity
 
 logger = logging.getLogger("meridian-ai.knowledge_writer")
 
@@ -39,7 +39,7 @@ class KnowledgeWriter:
         resolution_time_minutes: float = 0.0,
     ) -> EvidenceObject:
         """Multitasker: write 5 artifacts to DataHub with computed values."""
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # ── READ current state from DataHub ────────────────────────────
         model_entities = await self.mcp.get_entities(model_urns)

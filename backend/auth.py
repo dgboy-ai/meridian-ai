@@ -6,7 +6,7 @@ Requires: pip install python-jose[cryptography]
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi import Depends, HTTPException, Request, status
@@ -36,11 +36,11 @@ def create_access_token(
         expires_delta: Custom expiry; defaults to AUTH_ACCESS_TOKEN_EXPIRE_MINUTES.
     """
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + (
+    expire = datetime.now(UTC) + (
         expires_delta
         or timedelta(minutes=settings.auth.access_token_expire_minutes)
     )
-    to_encode.update({"exp": expire, "iat": datetime.now(timezone.utc)})
+    to_encode.update({"exp": expire, "iat": datetime.now(UTC)})
     return jwt.encode(to_encode, settings.auth.secret_key, algorithm=settings.auth.algorithm)
 
 

@@ -42,7 +42,7 @@ export default function JudgesPage() {
       </div>
 
       <DocH2>Method 1: CLI (Fastest)</DocH2>
-      <DocCode>{`git clone https://github.com/trueboy1123/meridian-ai
+      <DocCode>{`git clone https://github.com/dgboy-ai/meridian-ai
 cd meridian-ai
 pip install -e .
 meridian investigate "urn:li:mlModel:(urn:li:dataPlatform:mlflow,churn_model_v3,PROD)"`}</DocCode>
@@ -76,7 +76,7 @@ python -m backend.main`}</DocCode>
         headers={['Criterion', 'Evidence', 'Where to Find It']}
         rows={[
           ['Use of DataHub', '15 capabilities (7 read + 5 write + 2 governance + Actions)', 'backend/clients/datahub_client.py'],
-          ['Technical Execution', '552 tests, validation layer, maker-checker', 'tests/, backend/validation.py'],
+          ['Technical Execution', '611 tests, validation layer, maker-checker', 'tests/, backend/validation.py'],
           ['Originality', '18min → 8min → 3min flywheel, AI Knowledge panel', 'examples/resolution_times.json'],
           ['Real-World Usefulness', '$45K/day problem, 4 personas, EU AI Act', 'README.md, examples/'],
           ['Submission Quality', '7 generated examples, clear setup', 'examples/, README.md'],

@@ -15,8 +15,8 @@ Based on MERIDIAN_MASTER_STRATEGY.md:
 "Agentic Circuit Breaker: Monitors agent reasoning health, trips if
 hallucination/loop detected, implements graduated re-enablement."
 """
-import time
 import logging
+import time
 from dataclasses import dataclass, field
 from enum import Enum
 

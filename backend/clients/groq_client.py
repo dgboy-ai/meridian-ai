@@ -1,8 +1,10 @@
 """Groq client with rate limit handling, model fallback, and circuit breaker."""
-import os
 import json
 import logging
+import os
+
 from groq import Groq, RateLimitError
+
 from backend.resilience import CircuitBreaker
 
 logger = logging.getLogger("meridian-ai.groq")
@@ -97,8 +99,7 @@ class GroqClient:
                 elif cleaned.startswith("python\n"):
                     cleaned = cleaned[7:]
                 cleaned = cleaned.strip()
-                if cleaned.endswith("```"):
-                    cleaned = cleaned[:-3]
+                cleaned = cleaned.removesuffix("```")
                 try:
                     return json.loads(cleaned.strip())
                 except json.JSONDecodeError:

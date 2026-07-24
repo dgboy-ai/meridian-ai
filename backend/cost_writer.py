@@ -14,7 +14,7 @@ Based on IDC study:
 "Investigation cost $0.03. Prevented $45,000/day loss. ROI: 1,500,000%"
 """
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.cost_tracker import CostTracker, InvestigationCost
@@ -46,7 +46,7 @@ class CostWriter:
         Returns:
             Write result with cost summary
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Build cost properties
         cost_properties = {
@@ -123,7 +123,7 @@ class CostWriter:
         Returns:
             Write result with aggregate summary
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         summary = cost_tracker.get_roi_summary()
 
         aggregate_properties = {

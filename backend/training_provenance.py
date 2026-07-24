@@ -15,7 +15,7 @@ import hashlib
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 logger = logging.getLogger("meridian-ai.training_provenance")
 
@@ -172,7 +172,7 @@ class TrainingProvenanceManager:
         upstream_lineage: list[str] | None = None,
     ) -> ModelTrainingVersion:
         """Record training provenance for a model."""
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Parse training datasets
         td_versions = []

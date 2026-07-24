@@ -6,11 +6,11 @@ it indicates concept drift even if accuracy hasn't dropped yet.
 Real computation: compares feature importance distributions between
 training baseline and current serving explanations.
 """
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.models import EvidenceObject, Severity, EvidenceItem, DataHubMutation
+from backend.models import DataHubMutation, EvidenceItem, EvidenceObject, Severity
 
 
 class ExplanationDrift:
@@ -20,7 +20,7 @@ class ExplanationDrift:
 
     async def detect(self, model_urn: str) -> EvidenceObject:
         """Detect explanation drift by comparing feature importance distributions."""
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         model_entities = await self.mcp.get_entities([model_urn])
         model_entity = model_entities[0] if model_entities else {}

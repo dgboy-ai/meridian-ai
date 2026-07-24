@@ -17,7 +17,7 @@ Flags violations against:
 """
 import re
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 
 from backend.models import Severity
@@ -255,13 +255,13 @@ class PIIScanner:
         # Collect unique regulations
         regulations = list(set(f.regulation for f in all_findings))
 
-        violation_id = f"COMPLIANCE-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
+        violation_id = f"COMPLIANCE-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
 
         return ComplianceViolation(
             violation_id=violation_id,
             dataset_urn="",
             dataset_name="",
-            timestamp=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
+            timestamp=datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC"),
             findings=all_findings,
             affected_columns=sorted(affected_columns),
             affected_rows=len(affected_rows),

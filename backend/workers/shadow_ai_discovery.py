@@ -3,11 +3,11 @@
 Real computation: checks each model for missing ownership, tags, health
 scores, and upstream lineage. Pure code, no LLM guessing.
 """
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.models import EvidenceObject, Severity, EvidenceItem, DataHubMutation
+from backend.models import DataHubMutation, EvidenceItem, EvidenceObject, Severity
 from backend.stats import detect_governance_gaps
 
 
@@ -18,7 +18,7 @@ class ShadowAIDiscovery:
 
     async def discover(self) -> EvidenceObject:
         """Scan DataHub for ungoverned ML models. Real gap detection."""
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Get all ML models
         models = await self.mcp.search(query="", entity_type="mlModel")

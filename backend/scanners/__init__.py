@@ -1,3 +1,3 @@
-from .pii_scanner import PIIScanner, ComplianceViolation, PIIFinding
+from .pii_scanner import ComplianceViolation, PIIFinding, PIIScanner
 
-__all__ = ["PIIScanner", "ComplianceViolation", "PIIFinding"]
+__all__ = ["ComplianceViolation", "PIIFinding", "PIIScanner"]

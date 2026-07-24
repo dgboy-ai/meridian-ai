@@ -21,7 +21,7 @@ import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger("meridian-ai.persistence")
 
@@ -139,7 +139,7 @@ class _AbstractBackend(ABC):
     @abstractmethod
     async def insert_incident(self, record: IncidentRecord) -> None: ...
     @abstractmethod
-    async def get_incident(self, incident_id: str) -> Optional[IncidentRecord]: ...
+    async def get_incident(self, incident_id: str) -> IncidentRecord | None: ...
     @abstractmethod
     async def list_incidents(self, limit: int = 100, offset: int = 0) -> list[IncidentRecord]: ...
     @abstractmethod
@@ -149,7 +149,7 @@ class _AbstractBackend(ABC):
     @abstractmethod
     async def insert_investigation(self, record: InvestigationRecord) -> None: ...
     @abstractmethod
-    async def get_investigation(self, investigation_id: str) -> Optional[InvestigationRecord]: ...
+    async def get_investigation(self, investigation_id: str) -> InvestigationRecord | None: ...
     @abstractmethod
     async def list_investigations(self, incident_id: str | None = None, limit: int = 100) -> list[InvestigationRecord]: ...
     @abstractmethod
@@ -198,7 +198,7 @@ class _InMemoryBackend(_AbstractBackend):
     async def insert_incident(self, record: IncidentRecord) -> None:
         self._incidents[record.incident_id] = record
 
-    async def get_incident(self, incident_id: str) -> Optional[IncidentRecord]:
+    async def get_incident(self, incident_id: str) -> IncidentRecord | None:
         return self._incidents.get(incident_id)
 
     async def list_incidents(self, limit: int = 100, offset: int = 0) -> list[IncidentRecord]:
@@ -212,7 +212,7 @@ class _InMemoryBackend(_AbstractBackend):
     async def insert_investigation(self, record: InvestigationRecord) -> None:
         self._investigations[record.investigation_id] = record
 
-    async def get_investigation(self, investigation_id: str) -> Optional[InvestigationRecord]:
+    async def get_investigation(self, investigation_id: str) -> InvestigationRecord | None:
         return self._investigations.get(investigation_id)
 
     async def list_investigations(self, incident_id: str | None = None, limit: int = 100) -> list[InvestigationRecord]:
@@ -439,7 +439,7 @@ class _SQLiteBackend(_AbstractBackend):
         )
         await self._conn.commit()
 
-    async def get_incident(self, incident_id: str) -> Optional[IncidentRecord]:
+    async def get_incident(self, incident_id: str) -> IncidentRecord | None:
         cursor = await self._conn.execute(
             "SELECT * FROM incidents WHERE incident_id = ?", (incident_id,)
         )
@@ -479,7 +479,7 @@ class _SQLiteBackend(_AbstractBackend):
         )
         await self._conn.commit()
 
-    async def get_investigation(self, investigation_id: str) -> Optional[InvestigationRecord]:
+    async def get_investigation(self, investigation_id: str) -> InvestigationRecord | None:
         cursor = await self._conn.execute(
             "SELECT * FROM investigations WHERE investigation_id = ?",
             (investigation_id,),
@@ -633,7 +633,7 @@ class PersistenceManager:
         self._db_path = db_path or _DB_PATH
         self._backend: _AbstractBackend
 
-    async def __aenter__(self) -> "PersistenceManager":
+    async def __aenter__(self) -> PersistenceManager:
         self._backend = self._select_backend()
         await self._backend.initialize()
         return self
@@ -698,7 +698,7 @@ class PersistenceManager:
         await self._backend.insert_incident(record)
         return record
 
-    async def get_incident(self, incident_id: str) -> Optional[IncidentRecord]:
+    async def get_incident(self, incident_id: str) -> IncidentRecord | None:
         """Retrieve a single incident by ID."""
         return await self._backend.get_incident(incident_id)
 
@@ -741,7 +741,7 @@ class PersistenceManager:
         await self._backend.insert_investigation(record)
         return record
 
-    async def get_investigation(self, investigation_id: str) -> Optional[InvestigationRecord]:
+    async def get_investigation(self, investigation_id: str) -> InvestigationRecord | None:
         """Retrieve a single investigation by ID."""
         return await self._backend.get_investigation(investigation_id)
 

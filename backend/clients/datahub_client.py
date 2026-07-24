@@ -7,14 +7,14 @@ development and demo.
 Set DATAHUB_MOCK=false and ensure DataHub GMS is running at DATAHUB_GMS_URL
 to use the real integration.
 """
+import asyncio
 import copy
-import os
 import json
 import logging
-import asyncio
-from urllib.request import Request, urlopen
-from urllib.error import URLError, HTTPError
+import os
+from urllib.error import HTTPError, URLError
 from urllib.parse import quote
+from urllib.request import Request, urlopen
 
 import httpx
 
@@ -507,8 +507,7 @@ class DataHubMCPClient:
         """
         base = self.gms_url.rstrip("/")
         # Strip /api/gms suffix if present (REST endpoint path)
-        if base.endswith("/api/gms"):
-            base = base[: -len("/api/gms")]
+        base = base.removesuffix("/api/gms")
         return f"{base}/api/graphql"
 
     async def _graphql_mutation(self, mutation: str, variables: dict) -> dict | None:

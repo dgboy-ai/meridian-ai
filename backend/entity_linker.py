@@ -13,11 +13,11 @@ Based on Apple's DataHub implementation pattern for ML metadata management.
 """
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.models import EvidenceObject, Severity, EvidenceItem, DataHubMutation
+from backend.models import DataHubMutation, EvidenceItem, EvidenceObject, Severity
 
 logger = logging.getLogger("meridian-ai.entity_linker")
 
@@ -73,7 +73,7 @@ class EntityLinker:
         Returns:
             EvidenceObject with linking results
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         links_created = []
 
         # 1. Link incident to affected models

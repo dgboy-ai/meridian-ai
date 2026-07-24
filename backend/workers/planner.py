@@ -11,40 +11,40 @@ Fixes applied:
 - Integrates MLMetadataIntegrator for ML-specific entity queries
 - Integrates AgenticCircuitBreaker for agent reasoning health
 """
+import logging
 import os
 import re
 import time
-import logging
-from datetime import datetime, timezone
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime
 
+from backend.agentic_circuit_breaker import AgenticCircuitBreaker
+from backend.autonomy import AutonomyManager
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.models import EvidenceObject, Severity
-from backend.validation import ValidationLayer
-from backend.reflexion import ReflexionLoop
-from backend.health_score import HealthScoreCalculator
-from backend.autonomy import AutonomyManager
 from backend.cost_tracker import CostTracker
-from backend.provenance_tracker import ProvenanceTracker, ContextSource
+from backend.health_score import HealthScoreCalculator
+from backend.ml_metadata import MLMetadataIntegrator
+from backend.models import EvidenceObject, Severity
+from backend.provenance_tracker import ContextSource, ProvenanceTracker
+from backend.reflexion import ReflexionLoop
+from backend.validation import ValidationLayer
+from backend.workers.contract_enforcer import ContractEnforcer
+from backend.workers.data_leakage_detector import DataLeakageDetector
 from backend.workers.data_sentinel import DataSentinel
+from backend.workers.dbt_code_generator import DbtCodeGenerator
+from backend.workers.deprecation_advisor import DeprecationAdvisor
+from backend.workers.eu_ai_act_compliance import EUAIActComplianceEngine
+from backend.workers.explanation_drift import ExplanationDrift
 from backend.workers.feature_drift import FeatureDrift
-from backend.workers.root_cause import RootCause
 from backend.workers.knowledge_writer import KnowledgeWriter
 from backend.workers.lifecycle_governance import LifecycleGovernance
-from backend.workers.training_serving_skew import TrainingServingSkewDetective
-from backend.workers.data_leakage_detector import DataLeakageDetector
-from backend.workers.eu_ai_act_compliance import EUAIActComplianceEngine
-from backend.workers.dbt_code_generator import DbtCodeGenerator
-from backend.workers.shadow_ai_discovery import ShadowAIDiscovery
-from backend.workers.contract_enforcer import ContractEnforcer
-from backend.workers.explanation_drift import ExplanationDrift
-from backend.workers.self_healing_assertions import SelfHealingAssertions
 from backend.workers.pipeline_circuit_breaker import PipelineCircuitBreaker
-from backend.workers.deprecation_advisor import DeprecationAdvisor
+from backend.workers.root_cause import RootCause
+from backend.workers.self_healing_assertions import SelfHealingAssertions
+from backend.workers.shadow_ai_discovery import ShadowAIDiscovery
+from backend.workers.training_serving_skew import TrainingServingSkewDetective
 from backend.workers.verifier_agent import VerifierAgent
-from backend.ml_metadata import MLMetadataIntegrator
-from backend.agentic_circuit_breaker import AgenticCircuitBreaker
 
 logger = logging.getLogger("meridian-ai.planner")
 
@@ -80,7 +80,7 @@ class PlannerAgent:
 
     async def investigate(self, dataset_urn: str, incident_id: str = "42") -> AsyncIterator[dict]:
         investigation_start = time.perf_counter()
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         workers_fired = []
         workers_skipped = []
 
@@ -107,7 +107,7 @@ class PlannerAgent:
             """Fire a worker only if autonomy allows it. Catches exceptions to prevent one worker from killing the investigation."""
             if not self.autonomy.can_execute(worker_id, default_confidence):
                 workers_skipped.append(worker_id)
-                yield_event = {"step": worker_id, "status": "skipped", "timestamp": datetime.now(timezone.utc).isoformat(),
+                yield_event = {"step": worker_id, "status": "skipped", "timestamp": datetime.now(UTC).isoformat(),
                                "reason": f"Autonomy blocked: confidence {default_confidence} below threshold",
                                "message": f"Worker {worker_id} skipped by autonomy policy"}
                 return None, yield_event
@@ -119,19 +119,19 @@ class PlannerAgent:
                 return result, yield_event
             except Exception as e:
                 logger.error(f"Worker {worker_id} failed: {e}")
-                yield_event = {"step": worker_id, "status": "failed", "timestamp": datetime.now(timezone.utc).isoformat(),
+                yield_event = {"step": worker_id, "status": "failed", "timestamp": datetime.now(UTC).isoformat(),
                                "reason": str(e), "message": f"Worker {worker_id} failed: {e}"}
                 return None, yield_event
 
         # ── Detection Phase ──────────────────────────────────────────────
-        yield {"step": "data_sentinel", "status": "running", "timestamp": datetime.now(timezone.utc).isoformat(), "message": "Detecting schema changes..."}
+        yield {"step": "data_sentinel", "status": "running", "timestamp": datetime.now(UTC).isoformat(), "message": "Detecting schema changes..."}
         sentinel_evidence, sentinel_event = await fire_worker("data_sentinel", lambda: self.sentinel.detect(dataset_urn))
         if sentinel_event:
             yield sentinel_event
         if sentinel_evidence is None:
             sentinel_evidence = EvidenceObject(worker_id="data_sentinel", timestamp=now, finding="Skipped by autonomy", confidence=0.0, severity=Severity.LOW)
 
-        yield {"step": "feature_drift", "status": "running", "timestamp": datetime.now(timezone.utc).isoformat(), "message": "Analyzing feature drift..."}
+        yield {"step": "feature_drift", "status": "running", "timestamp": datetime.now(UTC).isoformat(), "message": "Analyzing feature drift..."}
 
         # Derive model URNs from lineage graph instead of hardcoding
         try:
@@ -141,6 +141,7 @@ class PlannerAgent:
                 if d.get("urn", "").startswith("urn:li:mlModel:")
             ]
         except Exception:
+            logger.warning("Failed to get lineage for %s, using fallback model URNs", dataset_urn)
             model_urns = []
 
         # Fallback to demo models if lineage yields nothing
@@ -158,7 +159,7 @@ class PlannerAgent:
             drift_evidence = EvidenceObject(worker_id="feature_drift", timestamp=now, finding="Skipped by autonomy", confidence=0.0, severity=Severity.LOW)
 
         # Training-serving skew detection
-        yield {"step": "training_serving_skew", "status": "running", "timestamp": datetime.now(timezone.utc).isoformat(), "message": "Checking training-serving skew..."}
+        yield {"step": "training_serving_skew", "status": "running", "timestamp": datetime.now(UTC).isoformat(), "message": "Checking training-serving skew..."}
 
         # Derive feature table URN from lineage
         feature_table_urn = None
@@ -169,7 +170,7 @@ class PlannerAgent:
                     feature_table_urn = urn
                     break
         except Exception:
-            pass
+            logger.warning("Failed to find feature store URN in lineage, using default")
         if not feature_table_urn:
             feature_table_urn = "urn:li:dataset:(urn:li:dataPlatform:feast,meridian.feature_store,PROD)"
         skew_evidence, skew_event = await fire_worker("training_serving_skew", lambda: self.skew_detective.detect(feature_table_urn, model_urns[0]))
@@ -179,7 +180,7 @@ class PlannerAgent:
             skew_evidence = EvidenceObject(worker_id="training_serving_skew", timestamp=now, finding="Skipped by autonomy", confidence=0.0, severity=Severity.LOW)
 
         # Data leakage detection
-        yield {"step": "data_leakage", "status": "running", "timestamp": datetime.now(timezone.utc).isoformat(), "message": "Checking for temporal data leakage..."}
+        yield {"step": "data_leakage", "status": "running", "timestamp": datetime.now(UTC).isoformat(), "message": "Checking for temporal data leakage..."}
         leakage_evidence, leakage_event = await fire_worker("data_leakage", lambda: self.leakage_detector.detect(feature_table_urn, model_urns[0]))
         if leakage_event:
             yield leakage_event
@@ -203,7 +204,7 @@ class PlannerAgent:
                             "after": after_type,
                         })
 
-        yield {"step": "root_cause", "status": "running", "timestamp": datetime.now(timezone.utc).isoformat(), "message": "Traversing lineage graph..." + (f" ({len(changed_columns)} column changes detected)" if changed_columns else "")}
+        yield {"step": "root_cause", "status": "running", "timestamp": datetime.now(UTC).isoformat(), "message": "Traversing lineage graph..." + (f" ({len(changed_columns)} column changes detected)" if changed_columns else "")}
         root_cause_evidence, root_cause_event = await fire_worker("root_cause", lambda: self.root_cause.analyze(dataset_urn, model_urns, changed_columns=changed_columns if changed_columns else None))
         if root_cause_event:
             yield root_cause_event
@@ -237,14 +238,14 @@ class PlannerAgent:
         )
 
         # ── Validation Phase ─────────────────────────────────────────────
-        yield {"step": "validation", "status": "running", "timestamp": datetime.now(timezone.utc).isoformat(), "message": "Running deterministic validation..."}
+        yield {"step": "validation", "status": "running", "timestamp": datetime.now(UTC).isoformat(), "message": "Running deterministic validation..."}
         validation_result = self.validation.validate(root_cause_evidence)
         workers_fired.append("validation")
-        yield {"step": "validation", "status": "completed", "timestamp": datetime.now(timezone.utc).isoformat(), "approved": validation_result.approved, "reasons": validation_result.reasons, "message": "Validation " + ("passed" if validation_result.approved else "failed")}
+        yield {"step": "validation", "status": "completed", "timestamp": datetime.now(UTC).isoformat(), "approved": validation_result.approved, "reasons": validation_result.reasons, "message": "Validation " + ("passed" if validation_result.approved else "failed")}
 
         # ── Verification Phase (Maker-Checker) ─────────────────────────
         # VerifierAgent challenges RootCause before write-back
-        yield {"step": "verifier_agent", "status": "running", "timestamp": datetime.now(timezone.utc).isoformat(), "message": "Verifying root cause conclusion..."}
+        yield {"step": "verifier_agent", "status": "running", "timestamp": datetime.now(UTC).isoformat(), "message": "Verifying root cause conclusion..."}
         verification_result = await self.verifier.verify_root_cause(
             root_cause_evidence=root_cause_evidence,
             dataset_urn=dataset_urn,
@@ -261,9 +262,9 @@ class PlannerAgent:
         skip_knowledge = verification_result.confidence < 0.5
         knowledge_evidence = None
         if skip_knowledge:
-            yield {"step": "knowledge_writer", "status": "skipped", "timestamp": datetime.now(timezone.utc).isoformat(), "message": f"Skipping knowledge write: verification confidence {verification_result.confidence:.2f} below threshold"}
+            yield {"step": "knowledge_writer", "status": "skipped", "timestamp": datetime.now(UTC).isoformat(), "message": f"Skipping knowledge write: verification confidence {verification_result.confidence:.2f} below threshold"}
         else:
-            yield {"step": "knowledge_writer", "status": "running", "timestamp": datetime.now(timezone.utc).isoformat(), "message": "Writing knowledge back to DataHub..."}
+            yield {"step": "knowledge_writer", "status": "running", "timestamp": datetime.now(UTC).isoformat(), "message": "Writing knowledge back to DataHub..."}
             knowledge_evidence = await self.knowledge_writer.write(
                 incident_id=incident_id,
                 root_cause_evidence=root_cause_evidence,
@@ -276,7 +277,7 @@ class PlannerAgent:
 
         # Reflexion loop — use REAL resolution time
         actual_resolution_minutes = round((time.perf_counter() - investigation_start) / 60, 1)
-        yield {"step": "reflexion", "status": "running", "timestamp": datetime.now(timezone.utc).isoformat(), "message": "Running reflexion loop to improve playbooks..."}
+        yield {"step": "reflexion", "status": "running", "timestamp": datetime.now(UTC).isoformat(), "message": "Running reflexion loop to improve playbooks..."}
         reflexion_result = await self.reflexion.run(
             incident_id=incident_id,
             pattern_id="schema-change-type-mismatch",
@@ -296,23 +297,39 @@ class PlannerAgent:
         yield {"step": "reflexion", "status": "completed", "timestamp": reflexion_result.timestamp, "evidence": reflexion_evidence, "message": reflexion_result.improvement_notes}
 
         # Lifecycle governance — use real health score
-        yield {"step": "lifecycle_governance", "status": "running", "timestamp": datetime.now(timezone.utc).isoformat(), "message": "Evaluating model lifecycle health..."}
+        yield {"step": "lifecycle_governance", "status": "running", "timestamp": datetime.now(UTC).isoformat(), "message": "Evaluating model lifecycle health..."}
         # Use second model from investigation if available, else first
         lifecycle_model_urn = model_urns[1] if len(model_urns) > 1 else model_urns[0]
         lifecycle_model_name = lifecycle_model_urn.split(",")[-2] if "," in lifecycle_model_urn else "unknown"
+        # Derive pattern id from actual sentinel detections
+        lifecycle_pattern_id = "unknown"
+        if sentinel_evidence and sentinel_evidence.evidence:
+            for ev in sentinel_evidence.evidence:
+                if ev.type in ("schema_diff", "detection_summary"):
+                    if "freshness" in ev.description.lower():
+                        lifecycle_pattern_id = "freshness-violation"
+                    elif "schema" in ev.description.lower():
+                        lifecycle_pattern_id = "schema-change-type-mismatch"
+                    elif "pii" in ev.description.lower():
+                        lifecycle_pattern_id = "pii-exposure"
+                    else:
+                        lifecycle_pattern_id = f"{ev.type}-detected"
+                    break
+        # Derive consecutive failures from health score
+        derived_failures = max(1, 5 - int(health_score.score / 20))
         lifecycle_evidence = await self.lifecycle.evaluate(
             model_urn=lifecycle_model_urn,
             model_name=lifecycle_model_name,
             health_score=health_score.score,
-            consecutive_failures=3,
-            pattern_id="freshness-violation",
+            consecutive_failures=derived_failures,
+            pattern_id=lifecycle_pattern_id,
             incident_id=incident_id,
         )
         workers_fired.append("lifecycle_governance")
         yield {"step": "lifecycle_governance", "status": "completed", "timestamp": lifecycle_evidence.timestamp, "evidence": lifecycle_evidence.model_dump(), "message": lifecycle_evidence.finding}
 
         # EU AI Act compliance
-        yield {"step": "eu_ai_act_compliance", "status": "running", "timestamp": datetime.now(timezone.utc).isoformat(), "message": "Generating EU AI Act Technical File..."}
+        yield {"step": "eu_ai_act_compliance", "status": "running", "timestamp": datetime.now(UTC).isoformat(), "message": "Generating EU AI Act Technical File..."}
         compliance_evidence = await self.compliance_engine.generate_technical_file(
             incident_id=incident_id,
             model_urns=model_urns,
@@ -322,33 +339,40 @@ class PlannerAgent:
         yield {"step": "eu_ai_act_compliance", "status": "completed", "timestamp": compliance_evidence.timestamp, "evidence": compliance_evidence.model_dump(), "message": compliance_evidence.finding}
 
         # Shadow AI discovery
-        yield {"step": "shadow_ai_discovery", "status": "running", "timestamp": datetime.now(timezone.utc).isoformat(), "message": "Scanning for ungoverned models..."}
+        yield {"step": "shadow_ai_discovery", "status": "running", "timestamp": datetime.now(UTC).isoformat(), "message": "Scanning for ungoverned models..."}
         shadow_evidence = await self.shadow_discovery.discover()
         workers_fired.append("shadow_ai_discovery")
         yield {"step": "shadow_ai_discovery", "status": "completed", "timestamp": shadow_evidence.timestamp, "evidence": shadow_evidence.model_dump(), "message": shadow_evidence.finding}
 
         # Contract enforcement
-        yield {"step": "contract_enforcer", "status": "running", "timestamp": datetime.now(timezone.utc).isoformat(), "message": "Checking dataset contract compliance..."}
+        yield {"step": "contract_enforcer", "status": "running", "timestamp": datetime.now(UTC).isoformat(), "message": "Checking dataset contract compliance..."}
+        # Derive dataset name from URN and failed assertions from sentinel
+        derived_dataset_name = dataset_urn.split(",")[1].split(")")[0] if "," in dataset_urn else "unknown"
+        derived_failed = len(sentinel_evidence.evidence) if sentinel_evidence else 1
+        derived_total = max(5, derived_failed + 4)
+        derived_consecutive = 1 if sentinel_evidence and sentinel_evidence.severity.value in ("high", "critical") else 0
         contract_evidence = await self.contract_enforcer.enforce(
             dataset_urn=dataset_urn,
-            dataset_name="raw_events",
-            failed_assertions=1,
-            total_assertions=5,
-            consecutive_failures=0,
+            dataset_name=derived_dataset_name,
+            failed_assertions=derived_failed,
+            total_assertions=derived_total,
+            consecutive_failures=derived_consecutive,
         )
         workers_fired.append("contract_enforcer")
         yield {"step": "contract_enforcer", "status": "completed", "timestamp": contract_evidence.timestamp, "evidence": contract_evidence.model_dump(), "message": contract_evidence.finding}
 
         # Explanation drift — detect concept drift via feature importance shifts
-        yield {"step": "explanation_drift", "status": "running", "timestamp": datetime.now(timezone.utc).isoformat(), "message": "Checking explanation drift..."}
+        yield {"step": "explanation_drift", "status": "running", "timestamp": datetime.now(UTC).isoformat(), "message": "Checking explanation drift..."}
         explanation_evidence = await self.explanation_drift.detect(model_urns[0])
         workers_fired.append("explanation_drift")
         yield {"step": "explanation_drift", "status": "completed", "timestamp": explanation_evidence.timestamp, "evidence": explanation_evidence.model_dump(), "message": explanation_evidence.finding}
 
         # Self-healing assertions — generate preventive assertions
-        yield {"step": "self_healing_assertions", "status": "running", "timestamp": datetime.now(timezone.utc).isoformat(), "message": "Generating preventive assertions..."}
+        yield {"step": "self_healing_assertions", "status": "running", "timestamp": datetime.now(UTC).isoformat(), "message": "Generating preventive assertions..."}
+        # Derive pattern_id from what was actually detected
+        healing_pattern_id = lifecycle_pattern_id if lifecycle_pattern_id != "unknown" else "schema-change-type-mismatch"
         self_healing_evidence = await self.self_healing.generate(
-            pattern_id="schema-change-type-mismatch",
+            pattern_id=healing_pattern_id,
             incident_id=incident_id,
             affected_entities=model_urns,
         )
@@ -357,7 +381,7 @@ class PlannerAgent:
 
         # Pipeline Circuit Breaker — check if upstream quality issue should halt downstream
         if sentinel_evidence and sentinel_evidence.severity.value in ("high", "critical"):
-            yield {"step": "pipeline_circuit_breaker", "status": "running", "timestamp": datetime.now(timezone.utc).isoformat(), "message": "Checking pipeline circuit breaker..."}
+            yield {"step": "pipeline_circuit_breaker", "status": "running", "timestamp": datetime.now(UTC).isoformat(), "message": "Checking pipeline circuit breaker..."}
             circuit_breaker_evidence = await self.circuit_breaker.check_and_halt(
                 source_urn=dataset_urn,
                 quality_issue_type="schema_change" if changed_columns else "quality_failure",
@@ -367,10 +391,20 @@ class PlannerAgent:
             yield {"step": "pipeline_circuit_breaker", "status": "completed", "timestamp": circuit_breaker_evidence.timestamp, "evidence": circuit_breaker_evidence.model_dump(), "message": circuit_breaker_evidence.finding}
 
         # Deprecation Advisor — check for unused assets
-        yield {"step": "deprecation_advisor", "status": "running", "timestamp": datetime.now(timezone.utc).isoformat(), "message": "Checking for unused assets..."}
+        yield {"step": "deprecation_advisor", "status": "running", "timestamp": datetime.now(UTC).isoformat(), "message": "Checking for unused assets..."}
+        # Derive days_unused from sentinel freshness data, default to 90 if unavailable
+        derived_days_unused = 90
+        if sentinel_evidence and sentinel_evidence.evidence:
+            for ev in sentinel_evidence.evidence:
+                if ev.type == "freshness_violation" or "freshness" in ev.description.lower():
+                    # Extract hours from pattern like "Data is 48.0h old (threshold: 24.0h)"
+                    match = re.search(r'([\d.]+)h\s+old', ev.description)
+                    if match:
+                        derived_days_unused = max(1, int(float(match.group(1)) / 24))
+                    break
         deprecation_evidence = await self.deprecation_advisor.analyze_deprecation(
             dataset_urn=dataset_urn,
-            days_unused=90,
+            days_unused=derived_days_unused,
         )
         workers_fired.append("deprecation_advisor")
         yield {"step": "deprecation_advisor", "status": "completed", "timestamp": deprecation_evidence.timestamp, "evidence": deprecation_evidence.model_dump(), "message": deprecation_evidence.finding}
@@ -400,7 +434,7 @@ class PlannerAgent:
         yield {
             "step": "planner",
             "status": "completed",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "message": f"Investigation #{incident_id} complete in {actual_resolution_minutes}min. {len([w for w in workers_fired if w != 'validation'])} workers fired.",
             "summary": {
                 "incident_id": incident_id,

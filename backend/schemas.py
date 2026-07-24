@@ -1,7 +1,7 @@
 """Pydantic schemas for API request/response validation."""
-from pydantic import BaseModel, Field, field_validator
-from typing import Optional
 from enum import Enum
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class IncidentSeverity(str, Enum):
@@ -142,16 +142,16 @@ class ModelResponse(BaseModel):
     platform: str
     owner: str
     tags: list[str]
-    health_score: Optional[int] = None
-    confidence: Optional[float] = None
+    health_score: int | None = None
+    confidence: float | None = None
 
 
 class ErrorResponse(BaseModel):
     """Error response."""
     error: str
-    detail: Optional[str] = None
-    path: Optional[str] = None
-    request_id: Optional[str] = None
+    detail: str | None = None
+    path: str | None = None
+    request_id: str | None = None
 
 
 class SSEEvent(BaseModel):
@@ -159,9 +159,9 @@ class SSEEvent(BaseModel):
     step: str
     status: str
     timestamp: str
-    finding: Optional[str] = None
-    confidence: Optional[float] = None
-    message: Optional[str] = None
-    evidence: Optional[dict] = None
-    severity: Optional[str] = None
-    business_impact: Optional[dict] = None
+    finding: str | None = None
+    confidence: float | None = None
+    message: str | None = None
+    evidence: dict | None = None
+    severity: str | None = None
+    business_impact: dict | None = None

@@ -13,6 +13,7 @@ Confidence: min(worker_confidences). If any < 0.7 → "unreliable". If < 3 worke
 """
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import ClassVar
 
 
 class AssessmentLevel(str, Enum):
@@ -80,7 +81,7 @@ class HealthScore:
 class HealthScoreCalculator:
     """Calculate ML health scores with weighted metrics and confidence."""
 
-    WEIGHTS = {
+    WEIGHTS: ClassVar[dict[str, float]] = {
         "Data Quality": 0.25,
         "Drift Magnitude": 0.20,
         "Prediction Quality": 0.25,
@@ -125,8 +126,8 @@ class HealthScoreCalculator:
             metric_scores.append(metric_score)
             weighted_sum += metric_score.weighted_score
 
-        score = int(round(weighted_sum * 100))
-        score = max(0, min(100, score))
+        score = round(weighted_sum * 100)
+        score = int(max(0, min(100, score)))
 
         # Calculate confidence
         if worker_confidences:

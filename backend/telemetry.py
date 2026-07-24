@@ -10,10 +10,10 @@ This module provides:
 
 Based on OpenTelemetry Python SDK patterns.
 """
-import time
 import logging
-from dataclasses import dataclass, field
+import time
 from contextlib import contextmanager
+from dataclasses import dataclass, field
 
 logger = logging.getLogger("meridian-ai.telemetry")
 

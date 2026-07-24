@@ -6,12 +6,11 @@ earlier. These assertions are written to DataHub's Assertions API.
 Real computation: analyzes incident patterns and generates targeted assertions.
 """
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.models import EvidenceObject, Severity, EvidenceItem, DataHubMutation
-
+from backend.models import DataHubMutation, EvidenceItem, EvidenceObject, Severity
 
 # Assertion templates for known incident patterns
 ASSERTION_TEMPLATES = {
@@ -49,7 +48,7 @@ class SelfHealingAssertions:
 
     async def generate(self, pattern_id: str, incident_id: str, affected_entities: list[str]) -> EvidenceObject:
         """Generate preventive assertions based on incident pattern."""
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         template = ASSERTION_TEMPLATES.get(pattern_id)
         if not template:

@@ -9,8 +9,7 @@ Based on strategy document lines 364-400:
 """
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
@@ -23,7 +22,7 @@ class ReflexionResult:
     """Output from a reflexion pass."""
     incident_id: str
     pattern_id: str
-    previous_playbook: Optional[str]
+    previous_playbook: str | None
     new_playbook: str
     improvement_notes: str
     resolution_time_before: float  # minutes
@@ -74,7 +73,7 @@ class ReflexionLoop:
         Returns:
             ReflexionResult with improved playbook
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # 1. Retrieve similar past playbooks
         previous_playbook = None

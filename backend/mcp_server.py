@@ -20,14 +20,14 @@ import sys
 # Ensure backend package is importable when run as __main__
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from mcp.server import Server  # noqa: E402
-from mcp.server.stdio import stdio_server  # noqa: E402
-from mcp.types import Tool, TextContent  # noqa: E402
+from mcp.server import Server
+from mcp.server.stdio import stdio_server
+from mcp.types import TextContent, Tool
 
-from backend.clients.datahub_client import DataHubMCPClient  # noqa: E402
-from backend.clients.groq_client import GroqClient  # noqa: E402
-from backend.workers.planner import PlannerAgent  # noqa: E402
-from backend.health_score import HealthScoreCalculator  # noqa: E402
+from backend.clients.datahub_client import DataHubMCPClient
+from backend.clients.groq_client import GroqClient
+from backend.health_score import HealthScoreCalculator
+from backend.workers.planner import PlannerAgent
 
 logger = logging.getLogger("meridian-ai.mcp")
 

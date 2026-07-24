@@ -15,7 +15,7 @@ Based on OpenLineage specification:
 import hashlib
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 logger = logging.getLogger("meridian-ai.openlineage")
 
@@ -72,7 +72,7 @@ class OpenLineageEmitter:
     ) -> OpenLineageRun:
         """Emit investigation start event."""
         run_id = self._generate_run_id(incident_id)
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Build inputs (datasets read during investigation)
         inputs = [
@@ -118,7 +118,7 @@ class OpenLineageEmitter:
     ) -> OpenLineageRun:
         """Emit investigation complete event."""
         run_id = self._generate_run_id(incident_id)
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Build inputs
         inputs = [
@@ -176,7 +176,7 @@ class OpenLineageEmitter:
     ) -> OpenLineageRun:
         """Emit investigation fail event."""
         run_id = self._generate_run_id(incident_id)
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         inputs = [
             {

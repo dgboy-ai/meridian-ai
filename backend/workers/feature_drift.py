@@ -10,12 +10,12 @@ Performs 2 DataHub writes:
   1. Writes drift metrics as structured properties
   2. Auto-tags features with drift status
 """
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.models import EvidenceObject, Severity, EvidenceItem, DataHubMutation
-from backend.stats import feature_drift_score, type_mismatch_check, population_stability_index, ks_test
+from backend.models import DataHubMutation, EvidenceItem, EvidenceObject, Severity
+from backend.stats import feature_drift_score, ks_test, population_stability_index, type_mismatch_check
 
 
 class FeatureDrift:
@@ -25,7 +25,7 @@ class FeatureDrift:
 
     async def detect(self, dataset_urn: str, model_urn: str) -> EvidenceObject:
         """Multitasker: PSI + KS + type mismatch + drift velocity."""
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         fields = await self.mcp.list_schema_fields(dataset_urn)
         entities = await self.mcp.get_entities([dataset_urn])

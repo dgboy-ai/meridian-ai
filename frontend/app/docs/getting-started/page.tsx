@@ -14,7 +14,7 @@ export default function GettingStartedPage() {
 
       <DocH2>Option 1: Mock Mode (30 seconds)</DocH2>
       <DocP>No Docker, no DataHub, no API keys needed. See the full investigation flow instantly.</DocP>
-      <DocCode>{`git clone https://github.com/trueboy1123/meridian-ai
+      <DocCode>{`git clone https://github.com/dgboy-ai/meridian-ai
 cd meridian-ai
 pip install -e .
 meridian investigate "urn:li:mlModel:(urn:li:dataPlatform:mlflow,churn_model_v3,PROD)"`}</DocCode>

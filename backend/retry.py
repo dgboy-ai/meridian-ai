@@ -1,7 +1,8 @@
 import asyncio
 import functools
 import random
-from typing import Any, Callable, Optional, Tuple, Type, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 T = TypeVar("T")
 
@@ -11,7 +12,7 @@ def async_retry(
     base_delay: float = 1.0,
     max_delay: float = 10.0,
     jitter: bool = True,
-    retryable_exceptions: Optional[Tuple[Type[Exception], ...]] = None,
+    retryable_exceptions: tuple[type[Exception], ...] | None = None,
 ) -> Callable[[Callable[..., T]], Callable[..., T]]:
     if retryable_exceptions is None:
         retryable_exceptions = (Exception,)

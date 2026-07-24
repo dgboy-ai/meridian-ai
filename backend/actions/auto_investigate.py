@@ -25,7 +25,7 @@ action:
 ```
 """
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 logger = logging.getLogger("meridian-ai.actions")
 
@@ -92,7 +92,7 @@ class AutoInvestigateAction:
                 "entity_urn": entity_urn,
                 "aspect": aspect,
                 "severity": severity,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             },
             "autonomy_level": self.autonomy_level,
             "message": f"Auto-investigation {investigation_id} triggered for {entity_urn}",

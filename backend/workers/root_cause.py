@@ -12,17 +12,18 @@ Performs 2 DataHub writes:
   1. Writes blast radius as structured properties
   2. Raises incident with full evidence
 """
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import ClassVar
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.models import EvidenceObject, Severity, EvidenceItem, BusinessImpact, DataHubMutation
-from backend.stats import traverse_lineage, traverse_column_lineage, compute_blast_radius
+from backend.models import BusinessImpact, DataHubMutation, EvidenceItem, EvidenceObject, Severity
+from backend.stats import compute_blast_radius, traverse_column_lineage, traverse_lineage
 
 
 class RootCause:
     # Entity type priority for root cause scoring (higher = more likely root cause)
-    ENTITY_TYPE_WEIGHTS = {
+    ENTITY_TYPE_WEIGHTS: ClassVar[dict[str, float]] = {
         "mlModel": 3.0,
         "featureStore": 2.5,
         "dataset": 1.0,
@@ -54,7 +55,7 @@ class RootCause:
 
         # 2. Downstream impact: count entities that list this urn as upstream
         downstream_impact = 0
-        for d_urn, d_entity in all_entities.items():
+        for d_urn in all_entities:
             if d_urn == candidate_urn:
                 continue
             # Check if candidate_urn appears in downstream entity's lineage
@@ -79,7 +80,7 @@ class RootCause:
 
     async def analyze(self, source_urn: str, affected_model_urns: list[str], changed_columns: list[dict] | None = None) -> EvidenceObject:
         """Multitasker: traverse lineage + blast radius + root cause + propagation + impact + column-level."""
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # ── COMPUTATION 1: Lineage traversal ───────────────────────────
         lineage = await self.mcp.get_lineage(source_urn, depth=5)

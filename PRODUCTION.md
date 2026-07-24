@@ -11,7 +11,7 @@
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/trueboy1123/meridian-ai
+git clone https://github.com/dgboy-ai/meridian-ai
 cd meridian-ai
 
 # 2. Start all services

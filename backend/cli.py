@@ -15,14 +15,15 @@ Examples:
     meridian serve --port 8000
 """
 import asyncio
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.workers.planner import PlannerAgent
 from backend.health_score import HealthScoreCalculator
+from backend.workers.planner import PlannerAgent
 
 
 def get_clients():
@@ -74,7 +75,7 @@ async def investigate(model_urn: str, incident_id: str = "AUTO"):
 
 async def health(model_urn: str):
     """Check model health."""
-    mcp, groq = get_clients()
+    mcp, _ = get_clients()
     calculator = HealthScoreCalculator()
 
     model_name = model_urn.split(",")[-2] if "," in model_urn else model_urn
@@ -110,7 +111,7 @@ async def health(model_urn: str):
 
 async def playbook(pattern_id: str):
     """View a playbook."""
-    mcp, groq = get_clients()
+    mcp, _ = get_clients()
     docs = await mcp.search_documents(query=f"playbook {pattern_id}", tags=["playbook"])
 
     if docs:
@@ -123,7 +124,7 @@ async def playbook(pattern_id: str):
 
 async def seed():
     """Seed demo data."""
-    mcp, groq = get_clients()
+    mcp, _ = get_clients()
 
     print("\nSeeding Meridian Commerce demo data into DataHub...")
 

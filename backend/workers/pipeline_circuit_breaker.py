@@ -11,11 +11,11 @@ Based on DataHub's pipeline circuit breaker pattern:
 "The circuit breaker trips on a specific asset's own assertions;
 lineage is how you know which downstream pipelines that failing asset feeds."
 """
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.models import EvidenceObject, Severity, EvidenceItem, DataHubMutation
+from backend.models import DataHubMutation, EvidenceItem, EvidenceObject, Severity
 from backend.stats import traverse_lineage
 
 
@@ -39,7 +39,7 @@ class PipelineCircuitBreaker:
             quality_issue_type: Type of issue (schema_change, freshness_violation, quality_failure)
             severity: Severity of the issue (LOW, MEDIUM, HIGH, CRITICAL)
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Get lineage for the failing asset
         lineage = await self.mcp.get_lineage(source_urn, depth=5)
@@ -198,7 +198,7 @@ class PipelineCircuitBreaker:
             source_urn: URN of the asset that was quarantined
             incident_id: Incident ID for tracking
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         source_entities = await self.mcp.get_entities([source_urn])
         source_name = source_entities[0].get("name", "unknown") if source_entities else "unknown"

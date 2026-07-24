@@ -99,7 +99,7 @@ export default function CTA() {
                 </svg>
               </a>
               <a
-                href="https://github.com/trueboy1123/meridian-ai"
+                href="https://github.com/dgboy-ai/meridian-ai"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{

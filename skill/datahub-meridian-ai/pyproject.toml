@@ -17,6 +17,6 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/trueboy1123/meridian-ai"
-Repository = "https://github.com/trueboy1123/meridian-ai"
-Issues = "https://github.com/trueboy1123/meridian-ai/issues"
+Homepage = "https://github.com/dgboy-ai/meridian-ai"
+Repository = "https://github.com/dgboy-ai/meridian-ai"
+Issues = "https://github.com/dgboy-ai/meridian-ai/issues"

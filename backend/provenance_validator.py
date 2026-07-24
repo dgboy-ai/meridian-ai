@@ -15,6 +15,7 @@ its source, freshness, and the policies that permitted access."
 """
 import logging
 from dataclasses import dataclass, field
+from typing import ClassVar
 
 logger = logging.getLogger("meridian-ai.provenance_validator")
 
@@ -74,7 +75,7 @@ class ProvenanceValidator:
     """
 
     # Source trust scores (0-1)
-    SOURCE_TRUST = {
+    SOURCE_TRUST: ClassVar[dict[str, float]] = {
         "datahub_metadata": 0.95,
         "datahub_lineage": 0.95,
         "datahub_document": 0.90,
@@ -87,7 +88,7 @@ class ProvenanceValidator:
     }
 
     # Freshness thresholds (seconds)
-    FRESHNESS_THRESHOLDS = {
+    FRESHNESS_THRESHOLDS: ClassVar[dict[str, int]] = {
         "datahub_metadata": 3600,      # 1 hour
         "datahub_lineage": 3600,       # 1 hour
         "datahub_document": 86400,     # 24 hours

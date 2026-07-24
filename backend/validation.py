@@ -7,7 +7,8 @@
 4. Duplicate incident prevention
 """
 from dataclasses import dataclass, field
-from backend.models import EvidenceObject, DataHubMutation
+
+from backend.models import DataHubMutation, EvidenceObject
 
 
 @dataclass

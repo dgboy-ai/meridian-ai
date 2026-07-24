@@ -4,11 +4,11 @@ Reads actual DataHub entity metadata (schema, lineage, descriptions) and generat
 production-ready dbt models. Targets Challenge 2 (Code Generation) of the hackathon.
 """
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.models import EvidenceObject, Severity, DataHubMutation
+from backend.models import DataHubMutation, EvidenceObject, Severity
 
 
 class DbtCodeGenerator:
@@ -27,7 +27,7 @@ class DbtCodeGenerator:
             source_dataset_urn: URN of the source dataset to model
             target_model_name: Name for the generated dbt model
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Read source schema from DataHub
         source_fields = await self.mcp.list_schema_fields(source_dataset_urn)

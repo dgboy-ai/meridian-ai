@@ -16,7 +16,6 @@ import math
 from collections import deque
 from dataclasses import dataclass, field
 
-
 # ── Drift Detection ───────────────────────────────────────────────────────────
 
 
@@ -104,8 +103,7 @@ def ks_test(
     max_diff = 0.0
     for x in all_values:
         diff = abs(ecdf(ref_sorted, x) - ecdf(cur_sorted, x))
-        if diff > max_diff:
-            max_diff = diff
+        max_diff = max(max_diff, diff)
 
     drifted = max_diff > threshold
     return DriftResult("ks", max_diff, threshold, drifted, f"KS={max_diff:.4f}")
@@ -174,12 +172,12 @@ def compute_schema_diff(
 
     type_changes = []
     unchanged = []
-    for name in before_map:
+    for name, before_type in before_map.items():
         if name in after_map:
-            if before_map[name] != after_map[name]:
+            if before_type != after_map[name]:
                 type_changes.append({
                     "column": name,
-                    "before": before_map[name],
+                    "before": before_type,
                     "after": after_map[name],
                 })
             else:

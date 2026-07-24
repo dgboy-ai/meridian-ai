@@ -9,11 +9,11 @@ If verifier disagrees, the Planner runs a third pass before escalating to human.
 This eliminates hallucinated root causes from reaching DataHub.
 """
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.models import EvidenceObject, Severity, EvidenceItem
+from backend.models import EvidenceItem, EvidenceObject, Severity
 from backend.stats import traverse_lineage
 
 logger = logging.getLogger("meridian-ai.verifier")
@@ -48,7 +48,7 @@ class VerifierAgent:
         Returns:
             Verification result as EvidenceObject
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Extract claims from root cause evidence
         root_cause_finding = root_cause_evidence.finding
@@ -178,7 +178,7 @@ class VerifierAgent:
         Returns:
             Cross-validation result
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Build prompt for LLM verification
         messages = [
@@ -215,24 +215,23 @@ Include your reasoning.""",
 
         # Parse response
         verified = "VERIFIED" in response.upper()
-        questionable = "QUESTIONABLE" in response.upper()
-        "REJECTED" in response.upper()
+        rejected = "REJECTED" in response.upper()
 
         if verified:
             finding = f"LLM VERIFICATION: Conclusion verified. {response[:200]}"
             severity = Severity.LOW
-        elif questionable:
-            finding = f"LLM VERIFICATION: Conclusion questionable. {response[:200]}"
-            severity = Severity.MEDIUM
-        else:
+        elif rejected:
             finding = f"LLM VERIFICATION: Conclusion rejected. {response[:200]}"
             severity = Severity.HIGH
+        else:
+            finding = f"LLM VERIFICATION: Conclusion questionable. {response[:200]}"
+            severity = Severity.MEDIUM
 
         return EvidenceObject(
             worker_id="verifier_agent",
             timestamp=now,
             finding=finding,
-            confidence=0.85 if verified else (0.6 if questionable else 0.3),
+            confidence=0.85 if verified else (0.6 if rejected else 0.3),
             severity=severity,
             evidence=[],
             datahub_mutations=[],

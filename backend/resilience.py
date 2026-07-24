@@ -1,10 +1,11 @@
 """Circuit breaker and retry patterns for enterprise resilience."""
-import time
 import logging
-from enum import Enum
+import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Any, Optional
+from enum import Enum
 from functools import wraps
+from typing import Any
 
 logger = logging.getLogger("meridian-ai.resilience")
 
@@ -128,7 +129,7 @@ class RetryStrategy:
         self,
         func: Callable,
         *args,
-        circuit_breaker: Optional[CircuitBreaker] = None,
+        circuit_breaker: CircuitBreaker | None = None,
         **kwargs,
     ) -> Any:
         """Execute function with retry logic."""
@@ -166,7 +167,6 @@ class RetryStrategy:
 
 class CircuitBreakerOpenError(Exception):
     """Raised when circuit breaker is open."""
-    pass
 
 
 def with_circuit_breaker(

@@ -163,7 +163,7 @@ export default function ArchitecturePage() {
           ['Compliance', 'EU AI Act SHA-256 audit chain'],
           ['Frontend', 'Next.js 14 + Framer Motion'],
           ['Deployment', 'Docker Compose (DataHub + MySQL + Kafka + ES)'],
-          ['Testing', '552 tests (pytest + pytest-asyncio)'],
+          ['Testing', '611 tests (pytest + pytest-asyncio)'],
         ]}
       />
     </DocsLayout>

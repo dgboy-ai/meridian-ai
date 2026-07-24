@@ -3,12 +3,12 @@
 Uses schema type mismatch detection + real distribution comparison.
 No LLM guessing.
 """
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.models import EvidenceObject, Severity, EvidenceItem, DataHubMutation
-from backend.stats import type_mismatch_check, feature_drift_score
+from backend.models import DataHubMutation, EvidenceItem, EvidenceObject, Severity
+from backend.stats import feature_drift_score, type_mismatch_check
 
 
 class TrainingServingSkewDetective:
@@ -21,7 +21,7 @@ class TrainingServingSkewDetective:
 
         Real computation: type_mismatch_check + feature_drift_score.
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Get feature table fields from DataHub
         feature_fields = await self.mcp.list_schema_fields(feature_table_urn)

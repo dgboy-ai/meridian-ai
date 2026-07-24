@@ -13,14 +13,14 @@ Performs 4 DataHub writes:
   3. Writes detection report to Knowledge Base
   4. Updates structured properties on affected entities
 """
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import ClassVar
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.models import EvidenceObject, Severity, EvidenceItem, BusinessImpact, DataHubMutation
-from backend.scanners.pii_scanner import PIIScanner, ComplianceViolation
-from backend.stats import compute_schema_diff, traverse_lineage, compute_blast_radius
-
+from backend.models import BusinessImpact, DataHubMutation, EvidenceItem, EvidenceObject, Severity
+from backend.scanners.pii_scanner import ComplianceViolation, PIIScanner
+from backend.stats import compute_blast_radius, compute_schema_diff, traverse_lineage
 
 # Baseline schema — what the schema looked like before the incident.
 # In production, stored in DataHub SchemaHistory or a versioned store.
@@ -48,7 +48,7 @@ class DataSentinel:
 
     async def detect(self, dataset_urn: str) -> EvidenceObject:
         """Multitasker detection: schema + freshness + PII + quality + lineage."""
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         detections = []
 
         # Get current state from DataHub
@@ -84,7 +84,7 @@ class DataSentinel:
         if entity.get("last_update"):
             try:
                 last_update = datetime.fromisoformat(entity["last_update"].replace("Z", "+00:00"))
-                age_seconds = (datetime.now(timezone.utc) - last_update).total_seconds()
+                age_seconds = (datetime.now(UTC) - last_update).total_seconds()
                 threshold = FRESHNESS_THRESHOLDS.get(entity.get("type", "dataset"), 3600)
                 if age_seconds > threshold:
                     detections.append({
@@ -284,7 +284,7 @@ class DataSentinel:
         return None
 
     # Synthetic values keyed by common PII-related field name fragments.
-    _SYNTHETIC_PII_VALUES = {
+    SYNTHETIC_PII_VALUES: ClassVar[dict[str, str]] = {
         "email": "test.user@example.com",
         "ssn": "123-45-6789",
         "phone": "+1-555-123-4567",
@@ -309,7 +309,7 @@ class DataSentinel:
                 name_lower = name.lower()
                 # Match field name against known PII patterns
                 synthetic_value = None
-                for pattern, value in self._SYNTHETIC_PII_VALUES.items():
+                for pattern, value in self.SYNTHETIC_PII_VALUES.items():
                     if pattern in name_lower:
                         synthetic_value = value
                         break

@@ -10,7 +10,7 @@ This module:
 """
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 
 logger = logging.getLogger("meridian-ai.sla_tracker")
@@ -173,7 +173,7 @@ class SLATracker:
             List of SLACheckResult objects
         """
         results = []
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         for policy in self._policies.values():
             if not policy.enabled:

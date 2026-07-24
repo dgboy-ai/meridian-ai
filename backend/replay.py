@@ -2,12 +2,12 @@
 
 Also supports replaying live investigation incidents from persistence.
 """
-import json
 import asyncio
+import json
 import logging
-from pathlib import Path
 from collections.abc import AsyncIterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from pathlib import Path
 
 logger = logging.getLogger("meridian-ai.replay")
 
@@ -87,7 +87,7 @@ class ReplayDriver:
             yield {
                 "step": event.get("step", "unknown"),
                 "status": event.get("status", "completed"),
-                "timestamp": event.get("time", datetime.now(timezone.utc).strftime("%H:%M:%S")),
+                "timestamp": event.get("time", datetime.now(UTC).strftime("%H:%M:%S")),
                 "finding": event.get("finding", ""),
                 "confidence": event.get("confidence", 0.9),
                 "message": event.get("message", ""),
@@ -100,7 +100,7 @@ class ReplayDriver:
         yield {
             "step": "complete",
             "status": "done",
-            "timestamp": datetime.now(timezone.utc).strftime("%H:%M:%S"),
+            "timestamp": datetime.now(UTC).strftime("%H:%M:%S"),
             "message": f"Investigation #{incident_id} complete. {len(timeline)} steps executed.",
             "incident_id": incident_id,
             "blast_radius": incident.get("blast_radius"),

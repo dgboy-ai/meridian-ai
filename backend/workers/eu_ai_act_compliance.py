@@ -8,13 +8,13 @@ Timeline: EU AI Act enforcement August 2, 2026. Hackathon deadline August 11, 20
 """
 import hashlib
 import json
-from pathlib import Path
-from datetime import datetime, timezone
 from dataclasses import dataclass
+from datetime import UTC, datetime
+from pathlib import Path
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.models import EvidenceObject, Severity, DataHubMutation
+from backend.models import DataHubMutation, EvidenceObject, Severity
 
 
 @dataclass
@@ -144,7 +144,7 @@ class EUAIActComplianceEngine:
             incident_id: Associated incident ID
         """
         record_id = f"AI-AUDIT-{incident_id}-{self.chain_length + 1:04d}"
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         record = AuditRecord(
             record_id=record_id,
@@ -178,7 +178,7 @@ class EUAIActComplianceEngine:
         Article 13: Transparency — provide deployers with clear information
         Article 14: Human oversight — enable effective human oversight
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Record the investigation decision chain
         if root_cause_evidence:

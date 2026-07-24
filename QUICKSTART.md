@@ -7,7 +7,7 @@
 ### Option A: Zero Setup (Mock Mode)
 
 ```bash
-git clone https://github.com/trueboy1123/meridian-ai
+git clone https://github.com/dgboy-ai/meridian-ai
 cd meridian-ai
 pip install -e .
 python -m backend.main

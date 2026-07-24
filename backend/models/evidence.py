@@ -1,7 +1,7 @@
 """Evidence Object schema — every worker returns this structured object."""
-from pydantic import BaseModel, Field
 from enum import Enum
-from typing import Optional
+
+from pydantic import BaseModel, Field
 
 
 class Severity(str, Enum):
@@ -13,19 +13,19 @@ class Severity(str, Enum):
 
 class EvidenceItem(BaseModel):
     type: str
-    description: Optional[str] = None
-    before: Optional[dict] = None
-    after: Optional[dict] = None
-    entity_urn: Optional[str] = None
-    downstream_count: Optional[int] = None
-    affected_models: Optional[list[str]] = None
-    affected_dashboards: Optional[int] = None
+    description: str | None = None
+    before: dict | None = None
+    after: dict | None = None
+    entity_urn: str | None = None
+    downstream_count: int | None = None
+    affected_models: list[str] | None = None
+    affected_dashboards: int | None = None
 
 
 class BusinessImpact(BaseModel):
-    predictions_today: Optional[int] = None
-    estimated_revenue_at_risk: Optional[str] = None
-    affected_systems: Optional[list[str]] = None
+    predictions_today: int | None = None
+    estimated_revenue_at_risk: str | None = None
+    affected_systems: list[str] | None = None
 
 
 class DataHubMutation(BaseModel):
@@ -41,6 +41,6 @@ class EvidenceObject(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
     severity: Severity
     evidence: list[EvidenceItem] = []
-    business_impact: Optional[BusinessImpact] = None
-    next_action: Optional[str] = None
+    business_impact: BusinessImpact | None = None
+    next_action: str | None = None
     datahub_mutations: list[DataHubMutation] = []

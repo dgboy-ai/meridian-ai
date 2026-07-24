@@ -1,19 +1,13 @@
+const createJestConfig = require('next/jest')({
+  dir: './',
+})
+
 /** @type {import('jest').Config} */
-const config = {
+const customConfig = {
   testEnvironment: 'jsdom',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
   },
-  testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/'],
-  transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', {
-      tsconfig: 'tsconfig.json',
-      jsx: 'react-jsx',
-    }],
-  },
-  transformIgnorePatterns: [
-    '/node_modules/(?!(framer-motion)/)',
-  ],
 }
 
-module.exports = config
+module.exports = createJestConfig(customConfig)

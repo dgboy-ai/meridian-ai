@@ -1,6 +1,7 @@
 """Centralized Pydantic BaseSettings configuration for Meridian AI."""
 
 import secrets
+
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 

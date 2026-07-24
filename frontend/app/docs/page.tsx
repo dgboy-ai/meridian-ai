@@ -21,7 +21,7 @@ export default function DocsPage() {
           { value: '83%', label: 'Faster Resolution', color: '#10b981', sub: '18min → 3min' },
           { value: '15', label: 'DataHub Tools', color: '#8b5cf6', sub: 'Read + Write + Govern' },
           { value: '18', label: 'Workers', color: '#f43f5e', sub: 'Real computation' },
-          { value: '552', label: 'Tests', color: '#06b6d4', sub: 'Passing' },
+          { value: '611', label: 'Tests', color: '#06b6d4', sub: 'Passing' },
         ].map((stat, i) => (
           <motion.div
             key={stat.label}

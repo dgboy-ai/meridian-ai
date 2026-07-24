@@ -12,7 +12,7 @@ This module:
 """
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from statistics import mean, stdev
 
 logger = logging.getLogger("meridian-ai.adaptive_assertions")
@@ -109,7 +109,7 @@ class AdaptiveAssertionManager:
     ):
         """Record an observation for a dataset metric."""
         if timestamp is None:
-            timestamp = datetime.now(timezone.utc).isoformat()
+            timestamp = datetime.now(UTC).isoformat()
 
         pattern_key = f"{dataset_urn}:{metric_name}"
         if pattern_key not in self._patterns:
@@ -153,11 +153,11 @@ class AdaptiveAssertionManager:
                 dataset_urn=dataset_urn,
                 metric_name=metric_name,
                 pattern=pattern,
-                created_at=datetime.now(timezone.utc).isoformat(),
+                created_at=datetime.now(UTC).isoformat(),
             )
 
         assertion = self._assertions[assertion_id]
-        assertion.last_checked = datetime.now(timezone.utc).isoformat()
+        assertion.last_checked = datetime.now(UTC).isoformat()
 
         if is_anomaly:
             assertion.violation_count += 1

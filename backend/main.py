@@ -1,32 +1,40 @@
 """FastAPI backend for Meridian AI — enterprise-grade implementation."""
-import os
+import asyncio
+import hashlib
 import json
+import logging
+import os
 import time
 import uuid
-import hashlib
-import asyncio
-import logging
-from datetime import datetime, timezone
-from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from datetime import UTC, datetime
+
 from fastapi import FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from backend.actions.listener import ActionsListener
 from backend.auth import JWTAuthMiddleware
-
-from backend.replay import ReplayDriver
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
-from backend.actions.listener import ActionsListener
-from backend.workers.planner import PlannerAgent
 from backend.persistence import PersistenceManager
+from backend.replay import ReplayDriver
 from backend.schemas import (
-    HealthResponse, ReadinessResponse, LivenessResponse, MetricsResponse,
-    IncidentsResponse, IncidentSummary, ResolutionTimesResponse, ResolutionTimeEntry,
-    ModelResponse, ErrorResponse, InvestigationMode,
+    ErrorResponse,
+    HealthResponse,
+    IncidentsResponse,
+    IncidentSummary,
+    InvestigationMode,
+    LivenessResponse,
+    MetricsResponse,
+    ModelResponse,
+    ReadinessResponse,
+    ResolutionTimeEntry,
+    ResolutionTimesResponse,
 )
+from backend.workers.planner import PlannerAgent
 
 # ─── Logging ───────────────────────────────────────────────────────────────────
 try:
@@ -402,7 +410,7 @@ async def get_resolution_times():
                         "pattern": r.pattern_id or "live-investigation",
                     })
         except Exception:
-            pass  # Fall back to replay-only data
+            logger.warning("Failed to load incidents from persistence, using replay-only data")
 
     # Sort by date descending
     times.sort(key=lambda t: t.get("date", ""), reverse=True)
@@ -577,7 +585,7 @@ async def run_investigation(request: Request):
             title=f"Investigation — {dataset_urn.split(',')[-2] if ',' in dataset_urn else 'unknown'}",
             severity="HIGH",
             status="IN_PROGRESS",
-            detected=datetime.now(timezone.utc).isoformat(),
+            detected=datetime.now(UTC).isoformat(),
             duration_seconds=0,
             root_cause="",
             pattern_id="",
@@ -685,6 +693,7 @@ async def _run_investigation_background(incident_id: str, dataset_urn: str):
                 ]
 
     # Build blast radius from real investigation data
+    overall_health_score = summary.get("health_score", 80)
     blast_radius = {
         "source": {
             "urn": dataset_urn,
@@ -693,7 +702,7 @@ async def _run_investigation_background(incident_id: str, dataset_urn: str):
             "status": "critical",
         },
         "affected": [
-            {"urn": m, "name": m.split(",")[1].split(")")[0] if "," in m else m, "type": "mlModel", "status": "warning", "health_score": 80}
+            {"urn": m, "name": m.split(",")[1].split(")")[0] if "," in m else m, "type": "mlModel", "status": "warning", "health_score": overall_health_score}
             for m in affected_models
         ],
         "business_impact": {
@@ -703,10 +712,11 @@ async def _run_investigation_background(incident_id: str, dataset_urn: str):
         },
     }
 
-    # Writeback summary
+    # Writeback summary — derives health_score from the actual investigation
+    model_name = dataset_urn.split(",")[-2] if "," in dataset_urn else "unknown"
     writeback = {
         "root_cause_report": {"title": f"Incident #{incident_id} — Root Cause Report", "status": "written"},
-        "ai_knowledge_panel": {"entity": "churn_model_v3", "status": "updated", "health_score": 81},
+        "ai_knowledge_panel": {"entity": model_name, "status": "updated", "health_score": overall_health_score},
         "playbook": {"title": "Playbook: Schema Change to Model Degradation", "status": "updated"},
         "incident_record": {"id": f"INC-{incident_id}", "linked_entities": len(affected_models), "status": "raised"},
     }
