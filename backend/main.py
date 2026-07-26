@@ -574,7 +574,9 @@ async def run_investigation(request: Request):
     except Exception:
         return JSONResponse(status_code=400, content={"error": "Invalid JSON body"})
 
-    dataset_urn = body.get("dataset_urn", "urn:li:dataset:(urn:li:dataPlatform:snowflake,meridian.raw_events,PROD)")
+    dataset_urn = body.get("dataset_urn", "")
+    if not dataset_urn or not dataset_urn.startswith("urn:li:"):
+        return JSONResponse(status_code=400, content={"error": "Valid dataset_urn required (must start with urn:li:)"})
     incident_id = body.get("incident_id", str(int(time.time())))
 
     # Create a placeholder incident in persistence immediately so the
@@ -679,8 +681,9 @@ async def _run_investigation_background(incident_id: str, dataset_urn: str):
                             affected_models.extend(ev_evidence[key])
                     # Also check lineage paths for model URNs
                     for item in ev_evidence.get("evidence", []):
-                        if isinstance(item, dict) and item.get("entity_urn", "").startswith("urn:li:mlModel:"):
-                            affected_models.append(item["entity_urn"])
+                        entity_urn = item.get("entity_urn") if isinstance(item, dict) else None
+                        if entity_urn and isinstance(entity_urn, str) and entity_urn.startswith("urn:li:mlModel:"):
+                            affected_models.append(entity_urn)
             # Deduplicate while preserving order
             seen = set()
             affected_models = [m for m in affected_models if not (m in seen or seen.add(m))]
