@@ -205,6 +205,80 @@ export default function ConsoleLayout({ children }: ConsoleLayoutProps) {
           <InvestigateButton />
         </div>
       )}
+
+      {/* Auth Links */}
+      {!collapsed && (
+        <div style={{
+          marginTop: '16px',
+          paddingTop: '16px',
+          borderTop: '1px solid rgba(255,255,255,0.05)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+        }}>
+          <a
+            href="/auth/login"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 12px',
+              borderRadius: '6px',
+              color: 'rgba(255,255,255,0.4)',
+              textDecoration: 'none',
+              fontSize: '12px',
+              fontFamily: 'monospace',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--accent-cyan)'
+              e.currentTarget.style.background = 'rgba(99, 102, 241, 0.08)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'rgba(255,255,255,0.4)'
+              e.currentTarget.style.background = 'transparent'
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+              <polyline points="10 17 15 12 10 7" />
+              <line x1="15" y1="12" x2="3" y2="12" />
+            </svg>
+            Login
+          </a>
+          <a
+            href="/auth/register"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 12px',
+              borderRadius: '6px',
+              color: 'rgba(255,255,255,0.4)',
+              textDecoration: 'none',
+              fontSize: '12px',
+              fontFamily: 'monospace',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--accent-green)'
+              e.currentTarget.style.background = 'rgba(34, 197, 94, 0.08)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'rgba(255,255,255,0.4)'
+              e.currentTarget.style.background = 'transparent'
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="8.5" cy="7" r="4" />
+              <line x1="20" y1="8" x2="20" y2="14" />
+              <line x1="23" y1="11" x2="17" y2="11" />
+            </svg>
+            Register
+          </a>
+        </div>
+      )}
     </div>
   )
 

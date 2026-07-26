@@ -537,23 +537,18 @@ class DataHubMCPClient:
 
     async def add_structured_properties(self, entity_urn: str, properties: dict) -> dict:
         if self._connected:
-            # Use updateAspect to set structured properties on an entity.
-            # DataHub's GraphQL API supports setting custom aspects via updateAspect.
-            mutation = """
-            mutation UpdateAspect($input: UpdateAspectInput!) {
-                updateAspect(input: $input)
+            # DataHub REST API: PATCH /entities/{entityUrn}/aspects to update structured properties.
+            # This is the correct way to set custom aspects — GraphQL updateAspect has a different schema.
+            encoded_urn = quote(entity_urn, safe="")
+            aspect_name = "meridianProperties"
+            aspect_body = {
+                "aspectName": aspect_name,
+                "aspectType": "DATAHUB",
+                "contentType": "application/json",
+                "content": json.dumps(properties),
             }
-            """
-            result = await self._graphql_mutation(mutation, {
-                "input": {
-                    "entityUrn": entity_urn,
-                    "aspectName": "meridianProperties",
-                    "aspectType": "DATAHUB",
-                    "contentType": "JSON",
-                    "content": json.dumps(properties),
-                }
-            })
-            if result:
+            result = await self._gms_request("PATCH", f"/entities/{encoded_urn}/aspects", aspect_body)
+            if result is not None:
                 logger.info(f"Structured properties written to DataHub for {entity_urn}")
                 return {"status": "ok", "entity_urn": entity_urn, "properties": properties}
 
@@ -611,26 +606,27 @@ class DataHubMCPClient:
         affected_entities: list[str] | None = None,
     ) -> dict:
         if self._connected:
-            # Create incident via DataHub GraphQL API
-            mutation = """
-            mutation RaiseIncident($input: RaiseIncidentInput!) {
-                raiseIncident(input: $input)
+            # DataHub REST API: POST /api/v2/incidents to create incidents.
+            # GraphQL does not have a raiseIncident mutation — incidents are REST-only.
+            incident_body = {
+                "type": type_,
+                "severity": severity,
+                "description": description[:500],
+                "incidentSource": "AUTOMATED",
+                "status": "ACTIVE",
             }
-            """
-            result = await self._graphql_mutation(mutation, {
-                "input": {
-                    "type": type_,
-                    "severity": severity,
-                    "description": description[:500],
-                    "incidentSource": "AUTOMATED",
-                    "assignee": "urn:li:corpuser:datahub",
-                    "notificationChannel": "DATAHUB",
-                }
-            })
+            if affected_entities:
+                incident_body["resourceUrn"] = affected_entities[0]
+            result = await self._gms_request("POST", "/api/v2/incidents", incident_body)
             if result:
                 logger.info(f"Real incident raised in DataHub: type={type_}, severity={severity}")
             else:
-                logger.warning("Failed to raise incident in DataHub via GraphQL, falling back to local tracking")
+                # Fallback: try the older incidents endpoint
+                result = await self._gms_request("POST", "/incidents?action=create", incident_body)
+                if result:
+                    logger.info(f"Real incident raised in DataHub (legacy): type={type_}, severity={severity}")
+                else:
+                    logger.warning("Failed to raise incident in DataHub, falling back to local tracking")
 
         # Create incident record (always, even in real mode for tracking)
         incident = {
