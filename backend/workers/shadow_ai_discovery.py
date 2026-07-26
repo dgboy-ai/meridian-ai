@@ -20,15 +20,12 @@ class ShadowAIDiscovery:
         """Scan DataHub for ungoverned ML models. Real gap detection."""
         now = datetime.now(UTC).isoformat()
 
-        # Get all ML models
+        # Get all ML models — search DataHub, fall back to entity lookup
         models = await self.mcp.search(query="", entity_type="mlModel")
         if not models:
-            known_urns = [
-                "urn:li:mlModel:(urn:li:dataPlatform:mlflow,churn_model_v3,PROD)",
-                "urn:li:mlModel:(urn:li:dataPlatform:mlflow,ltv_model_v2,PROD)",
-                "urn:li:mlModel:(urn:li:dataPlatform:mlflow,segment_model_v1,PROD)",
-            ]
-            models = await self.mcp.get_entities(known_urns)
+            # Fallback: search for any mlModel entities
+            all_entities = await self.mcp.search(query="*", entity_type="mlModel")
+            models = all_entities if all_entities else []
 
         # ── REAL COMPUTATION: governance gap detection ─────────────────
         governance_gaps = detect_governance_gaps(models)
