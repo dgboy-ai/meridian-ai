@@ -22,16 +22,10 @@ from backend.models import BusinessImpact, DataHubMutation, EvidenceItem, Eviden
 from backend.scanners.pii_scanner import ComplianceViolation, PIIScanner
 from backend.stats import compute_blast_radius, compute_schema_diff, traverse_lineage
 
-# Baseline schema — what the schema looked like before the incident.
-# In production, stored in DataHub SchemaHistory or a versioned store.
-BASELINE_SCHEMA = {
-    "urn:li:dataset:(urn:li:dataPlatform:snowflake,meridian.raw_events,PROD)": [
-        {"name": "event_id", "type": "STRING"},
-        {"name": "user_id", "type": "STRING"},
-        {"name": "user_age", "type": "INT"},
-        {"name": "timestamp", "type": "TIMESTAMP"},
-    ],
-}
+# Baseline schema cache — populated from DataHub SchemaHistory or previous scan.
+# In production, this is a versioned store. For demo, we cache the first scan
+# and compare subsequent scans against it.
+_SCHEMA_BASELINE_CACHE: dict[str, list[dict]] = {}
 
 # Freshness thresholds (seconds)
 FRESHNESS_THRESHOLDS = {
@@ -69,7 +63,10 @@ class DataSentinel:
         blast_radius = compute_blast_radius(all_downstream_urns, entities_dict)
 
         # ── DETECTION 1: Schema diff ───────────────────────────────────
-        baseline_fields = BASELINE_SCHEMA.get(dataset_urn, current_fields)
+        # Use cached baseline from first scan, or fall back to current (no diff on first run)
+        baseline_fields = _SCHEMA_BASELINE_CACHE.get(dataset_urn, current_fields)
+        if dataset_urn not in _SCHEMA_BASELINE_CACHE:
+            _SCHEMA_BASELINE_CACHE[dataset_urn] = current_fields
         schema_diff = compute_schema_diff(baseline_fields, current_fields)
         if schema_diff.has_changes:
             detections.append({
@@ -328,7 +325,8 @@ class DataSentinel:
     ) -> list[dict]:
         """Return sample data for PII scanning.
 
-        Priority: entity metadata sample_data > hardcoded fallback > synthetic from field names.
+        Priority: entity metadata sample_data > synthetic from field names.
+        No hardcoded PII — synthetic data is generated from field name patterns.
         """
         # 1. Check entity metadata for sample_data
         if entity:
@@ -336,17 +334,7 @@ class DataSentinel:
             if sample and isinstance(sample, list):
                 return sample
 
-        # 2. Hardcoded fallback for known entities with PII
-        if "raw_events" in entity_name:
-            return [
-                {"user_id": "U001", "email": "john.doe@example.com", "ip_address": "192.168.1.100", "event_type": "click"},
-                {"user_id": "U002", "email": "jane.smith@company.org", "ip_address": "10.0.0.55", "event_type": "purchase"},
-                {"user_id": "U003", "email": "bob@test.co", "phone": "+1-555-123-4567", "event_type": "signup"},
-                {"user_id": "U004", "email": "alice@example.com", "ssn": "123-45-6789", "event_type": "login"},
-                {"user_id": "U005", "email": "charlie@demo.io", "ip_address": "172.16.0.1", "event_type": "logout"},
-            ]
-
-        # 3. Generate synthetic data from field names (last resort)
+        # 2. Generate synthetic data from field names
         if fields:
             return self._generate_synthetic_data(fields)
 

@@ -24,7 +24,6 @@ from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
 from backend.cost_tracker import CostTracker
 from backend.health_score import HealthScoreCalculator
-from backend.ml_metadata import MLMetadataIntegrator
 from backend.models import EvidenceObject, Severity
 from backend.provenance_tracker import ContextSource, ProvenanceTracker
 from backend.reflexion import ReflexionLoop
@@ -75,7 +74,6 @@ class PlannerAgent:
         self.circuit_breaker = PipelineCircuitBreaker(mcp, groq)
         self.deprecation_advisor = DeprecationAdvisor(mcp, groq)
         self.verifier = VerifierAgent(mcp, groq)
-        self.ml_metadata = MLMetadataIntegrator(mcp, groq)
         self.agentic_circuit_breaker = AgenticCircuitBreaker()
 
     async def investigate(self, dataset_urn: str, incident_id: str = "42") -> AsyncIterator[dict]:

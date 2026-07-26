@@ -128,10 +128,15 @@ class TestDataSentinelScenarios:
 
     @pytest.mark.asyncio
     async def test_sentinel_pii_scan(self, mcp, groq):
-        """Data Sentinel scans for PII."""
+        """Data Sentinel scans for PII when sample data is provided."""
         sentinel = DataSentinel(mcp=mcp, groq=groq)
+        sample_data = [
+            {"user_id": "U001", "email": "john.doe@example.com", "ip_address": "192.168.1.100", "event_type": "click"},
+            {"user_id": "U002", "email": "jane.smith@company.org", "ip_address": "10.0.0.55", "event_type": "purchase"},
+        ]
         violation = await sentinel.scan_for_pii(
-            "urn:li:dataset:(urn:li:dataPlatform:snowflake,meridian.raw_events,PROD)"
+            "urn:li:dataset:(urn:li:dataPlatform:snowflake,meridian.raw_events,PROD)",
+            sample_data=sample_data,
         )
         assert violation is not None
         assert violation.total_violations > 0

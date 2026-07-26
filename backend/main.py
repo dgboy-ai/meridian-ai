@@ -1,9 +1,9 @@
 """FastAPI backend for Meridian AI — enterprise-grade implementation."""
 import asyncio
-import hashlib
 import json
 import logging
 import os
+import re
 import time
 import uuid
 from collections.abc import AsyncIterator
@@ -19,6 +19,7 @@ from backend.actions.listener import ActionsListener
 from backend.auth import JWTAuthMiddleware
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
+from backend.config import settings
 from backend.persistence import PersistenceManager
 from backend.replay import ReplayDriver
 from backend.schemas import (
@@ -52,25 +53,6 @@ except ImportError:
         datefmt="%Y-%m-%dT%H:%M:%S",
     )
 logger = logging.getLogger("meridian-ai")
-
-# ─── Configuration ─────────────────────────────────────────────────────────────
-class Settings:
-    APP_NAME: str = "meridian-ai"
-    APP_VERSION: str = "1.0.0"
-    HOST: str = os.getenv("HOST", "0.0.0.0")
-    PORT: int = int(os.getenv("PORT", "8000"))
-    LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
-    DATAHUB_MOCK: bool = os.getenv("DATAHUB_MOCK", "true").lower() == "true"
-    DATAHUB_GMS_URL: str = os.getenv("DATAHUB_GMS_URL", "http://localhost:8080/api/gms")
-    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
-    MAX_REQUESTS_PER_MINUTE: int = int(os.getenv("MAX_RPM", "60"))
-    REQUEST_TIMEOUT: int = int(os.getenv("REQUEST_TIMEOUT", "30"))
-    MAX_BODY_SIZE: int = int(os.getenv("MAX_BODY_SIZE", str(10 * 1024 * 1024)))  # 10MB default
-    AUTH_ENABLED: bool = os.getenv("AUTH_ENABLED", "false").lower() == "true"
-    CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "*")
-    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", os.urandom(32).hex())
-
-settings = Settings()
 
 # ─── Metrics ───────────────────────────────────────────────────────────────────
 class Metrics:
@@ -112,21 +94,31 @@ metrics = Metrics()
 
 # ─── Rate Limiter ──────────────────────────────────────────────────────────────
 class RateLimiter:
+    """Fixed-window rate limiter. Thread-safe per-process.
+
+    NOTE: For multi-worker deployments (gunicorn -w N), use Redis-backed
+    rate limiting. This in-memory version is correct for single-worker
+    FastAPI/Uvicorn deployments (the typical hackathon setup).
+    """
+
     def __init__(self, max_requests: int, window_seconds: int = 60):
         self.max_requests = max_requests
         self.window_seconds = window_seconds
-        self.requests: list[float] = []
+        self._window_start: float = time.time()
+        self._count: int = 0
 
     def is_allowed(self) -> bool:
         now = time.time()
-        cutoff = now - self.window_seconds
-        self.requests = [t for t in self.requests if t > cutoff]
-        if len(self.requests) >= self.max_requests:
+        # Reset window if expired
+        if now - self._window_start >= self.window_seconds:
+            self._window_start = now
+            self._count = 0
+        if self._count >= self.max_requests:
             return False
-        self.requests.append(now)
+        self._count += 1
         return True
 
-rate_limiter = RateLimiter(settings.MAX_REQUESTS_PER_MINUTE)
+rate_limiter = RateLimiter(int(os.getenv("MAX_RPM", "60")))
 
 # ─── Middleware ─────────────────────────────────────────────────────────────────
 class RequestMetricsMiddleware(BaseHTTPMiddleware):
@@ -134,15 +126,36 @@ class RequestMetricsMiddleware(BaseHTTPMiddleware):
         request_id = str(uuid.uuid4())[:8]
         request.state.request_id = request_id
 
-        # Body size limit for POST/PUT/PATCH
+        # Body size limit for POST/PUT/PATCH — blocks both content-length and chunked
+        max_body = int(os.getenv("MAX_BODY_SIZE", str(10 * 1024 * 1024)))
         if request.method in ("POST", "PUT", "PATCH"):
             content_length = request.headers.get("content-length")
-            if content_length and int(content_length) > settings.MAX_BODY_SIZE:
+            if content_length and int(content_length) > max_body:
                 return JSONResponse(
                     status_code=413,
-                    content={"error": "Request body too large", "max_bytes": settings.MAX_BODY_SIZE},
+                    content={"error": "Request body too large", "max_bytes": max_body},
                     headers={"X-Request-ID": request_id},
                 )
+            # For chunked encoding: wrap body to enforce size limit during read
+            if not content_length:
+                original_receive = request._receive
+                body_chunks: list[bytes] = []
+                total_size = 0
+                exceeded = False
+
+                async def _limited_receive():
+                    nonlocal total_size, exceeded
+                    if exceeded:
+                        return {"type": "http.request", "body": b"", "more_body": False}
+                    msg = await original_receive()
+                    chunk = msg.get("body", b"")
+                    total_size += len(chunk)
+                    if total_size > max_body:
+                        exceeded = True
+                        return {"type": "http.request", "body": b"", "more_body": False}
+                    return msg
+
+                request._receive = _limited_receive
 
         # Rate limiting
         if not rate_limiter.is_allowed():
@@ -175,7 +188,10 @@ class RequestMetricsMiddleware(BaseHTTPMiddleware):
 class AppState:
     def __init__(self):
         self.replay = ReplayDriver()
-        self.mcp = DataHubMCPClient()  # Auto-detects real vs mock
+        self.mcp = DataHubMCPClient(
+            gms_url=settings.datahub.gms_url,
+            mock=settings.datahub.mock,
+        )
         self.groq = GroqClient()
         self.planner = PlannerAgent(mcp=self.mcp, groq=self.groq)
         self.actions_listener = ActionsListener()
@@ -187,10 +203,14 @@ app_state = AppState()
 # ─── Lifespan ──────────────────────────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
-    logger.info(f"Mode: {'mock' if settings.DATAHUB_MOCK else 'live'}")
+    logger.info(f"Starting {settings.app.name} v{settings.app.version}")
+    logger.info(f"Mode: {'mock' if settings.datahub.mock else 'live'}")
+
+    # Probe DataHub GMS asynchronously (non-blocking)
+    await app_state.mcp.connect()
+
     logger.info(f"Groq connected: {app_state.groq.client is not None}")
-    logger.info(f"Auth enabled: {settings.AUTH_ENABLED}")
+    logger.info(f"Auth enabled: {settings.auth.enabled}")
 
     # Initialize persistence
     app_state.persistence = PersistenceManager()
@@ -237,7 +257,7 @@ async def _seed_replay_incidents():
 # ─── FastAPI App ───────────────────────────────────────────────────────────────
 app = FastAPI(
     title="Meridian AI",
-    version=settings.APP_VERSION,
+    version=settings.app.version,
     description="AI Reliability Engineer for production ML models",
     lifespan=lifespan,
     responses={
@@ -248,10 +268,10 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in settings.CORS_ORIGINS.split(",")],
-    allow_credentials=settings.CORS_ORIGINS != "*",
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_origins=settings.cors.allow_origins,
+    allow_credentials=settings.cors.allow_credentials,
+    allow_methods=settings.cors.allow_methods,
+    allow_headers=settings.cors.allow_headers,
 )
 
 # JWT Auth middleware — enforces Bearer token when AUTH_ENABLED=true
@@ -265,8 +285,8 @@ async def health():
     """Basic health check — is the service running?"""
     return HealthResponse(
         status="healthy",
-        service=settings.APP_NAME,
-        version=settings.APP_VERSION,
+        service=settings.app.name,
+        version=settings.app.version,
         mode=app_state.mcp.mode,
         groq_connected=app_state.groq.client is not None,
         datahub_mock=app_state.mcp.mode == "mock",
@@ -277,7 +297,7 @@ async def readiness():
     """Readiness probe — is the service ready to accept traffic?"""
     checks = {
         "replay_driver": True,
-        "groq_client": app_state.groq.client is not None or settings.DATAHUB_MOCK,
+        "groq_client": app_state.groq.client is not None or settings.datahub.mock,
         "datahub_client": True,
         "rate_limiter": True,
     }
@@ -298,17 +318,22 @@ async def get_metrics():
     m = metrics.to_dict()
     return MetricsResponse(
         **m,
-        app=settings.APP_NAME,
-        version=settings.APP_VERSION,
-        mode="replay" if settings.DATAHUB_MOCK else "live",
+        app=settings.app.name,
+        version=settings.app.version,
+        mode="replay" if settings.datahub.mock else "live",
     )
 
 # ─── API: Incidents ────────────────────────────────────────────────────────────
 @app.get("/api/incidents", response_model=IncidentsResponse, tags=["Incidents"])
-async def list_incidents():
-    """List all incidents from persistence (includes seeded replay + live investigations)."""
+async def list_incidents(
+    limit: int = Query(50, ge=1, le=200, description="Max incidents to return"),
+    offset: int = Query(0, ge=0, description="Offset for pagination"),
+):
+    """List incidents from persistence with pagination."""
     if app_state.persistence:
-        records = await app_state.persistence.list_incidents(limit=100)
+        records = await app_state.persistence.list_incidents(limit=limit + offset)
+        # Apply pagination
+        paginated = records[offset:offset + limit]
         incidents = [
             IncidentSummary(
                 id=r.incident_id,
@@ -320,13 +345,14 @@ async def list_incidents():
                 affected_models=r.affected_models or [],
                 pattern_id=r.pattern_id,
             )
-            for r in records
+            for r in paginated
         ]
         return IncidentsResponse(incidents=incidents)
 
     # Fallback to replay-only if persistence unavailable
     incidents = app_state.replay.list_incidents()
-    return IncidentsResponse(incidents=[IncidentSummary(**inc) for inc in incidents])
+    paginated = incidents[offset:offset + limit]
+    return IncidentsResponse(incidents=[IncidentSummary(**inc) for inc in paginated])
 
 @app.get("/api/incidents/{incident_id}", tags=["Incidents"])
 async def get_incident(incident_id: str):
@@ -415,10 +441,24 @@ async def get_resolution_times():
     # Sort by date descending
     times.sort(key=lambda t: t.get("date", ""), reverse=True)
 
+    # Compute trend from actual resolution times
+    trend = "stable"
+    predicted_next = 0
+    if len(times) >= 2:
+        durations = [t.get("duration_minutes", 0) for t in times[:10]]  # Last 10
+        if len(durations) >= 2:
+            recent_avg = sum(durations[:len(durations)//2]) / max(len(durations)//2, 1)
+            older_avg = sum(durations[len(durations)//2:]) / max(len(durations) - len(durations)//2, 1)
+            if recent_avg < older_avg * 0.85:
+                trend = "decreasing"
+            elif recent_avg > older_avg * 1.15:
+                trend = "increasing"
+            predicted_next = int(round(recent_avg * 0.95)) if recent_avg > 0 else 1
+
     return ResolutionTimesResponse(
         incidents=[ResolutionTimeEntry(**t) for t in times],
-        trend="decreasing",
-        predicted_next=1,
+        trend=trend,
+        predicted_next=predicted_next,
     )
 
 # ─── API: Actions Framework ────────────────────────────────────────────────────
@@ -542,7 +582,7 @@ async def stream_investigation(
     """Stream live or replay investigation events via SSE with keepalive heartbeats."""
     async def event_generator() -> AsyncIterator[str]:
         try:
-            if mode == InvestigationMode.LIVE and not settings.DATAHUB_MOCK:
+            if mode == InvestigationMode.LIVE and not settings.datahub.mock:
                 async for event in app_state.planner.investigate(dataset_urn, incident_id):
                     yield f"data: {json.dumps(event)}\n\n"
                     await asyncio.sleep(0.3)
@@ -619,12 +659,16 @@ async def _run_investigation_background(incident_id: str, dataset_urn: str):
                 summary = event["summary"]
     except Exception as e:
         logger.error(f"Investigation {incident_id} failed: {e}", exc_info=True)
+        # Persist failure state so frontend can display it
         if app_state.persistence:
-            record = await app_state.persistence.get_incident(incident_id)
-            if record:
-                record.status = "FAILED"
-                record.root_cause = f"Investigation failed: {e}"
-                await app_state.persistence.update_incident(record)
+            try:
+                record = await app_state.persistence.get_incident(incident_id)
+                if record:
+                    record.status = "FAILED"
+                    record.root_cause = f"Investigation failed: {e}"
+                    await app_state.persistence.update_incident(record)
+            except Exception as persist_err:
+                logger.error(f"Failed to persist investigation failure: {persist_err}")
         return
 
     # Extract timeline, blast radius, and writeback from events
@@ -660,7 +704,6 @@ async def _run_investigation_background(incident_id: str, dataset_urn: str):
                     blast_radius.setdefault("predictions_today", bi["predictions_today"])
                 if bi.get("estimated_revenue_at_risk"):
                     # Parse "$45,000/day" → 45000
-                    import re
                     rev_match = re.search(r'\$?([\d,]+)', str(bi["estimated_revenue_at_risk"]))
                     if rev_match:
                         blast_radius["revenue_at_risk_daily"] = int(rev_match.group(1).replace(",", ""))
@@ -877,8 +920,8 @@ async def get_architecture():
     """Return the full system architecture — workers, tools, and connections."""
     return {
         "name": "Meridian AI",
-        "version": settings.APP_VERSION,
-        "mode": "mock" if settings.DATAHUB_MOCK else "live",
+        "version": settings.app.version,
+        "mode": "mock" if settings.datahub.mock else "live",
         "workers": [
             {"id": "data_sentinel", "name": "Data Sentinel", "phase": "detection", "description": "Schema diff, freshness, PII, data quality, volume"},
             {"id": "feature_drift", "name": "Feature Drift", "phase": "detection", "description": "PSI/KS-test per feature, type mismatch detection"},
@@ -896,7 +939,7 @@ async def get_architecture():
             {"id": "self_healing", "name": "Self-Healing Assertions", "phase": "learning", "description": "Preventive assertion generation"},
             {"id": "pipeline_circuit_breaker", "name": "Pipeline Circuit Breaker", "phase": "enforcement", "description": "Halt downstream on upstream failure"},
             {"id": "deprecation_advisor", "name": "Deprecation Advisor", "phase": "governance", "description": "Safe deprecation of unused assets"},
-            {"id": "ml_metadata", "name": "ML Metadata Integrator", "phase": "detection", "description": "MLModelDeployment, MLFeatureTable, MLModelGroup queries"},
+            {"id": "provenance_tracker", "name": "Provenance Tracker", "phase": "tracking", "description": "Context source tracking and data lineage provenance"},
             {"id": "agentic_circuit_breaker", "name": "Agentic Circuit Breaker", "phase": "verification", "description": "Agent reasoning health monitoring"},
         ],
         "datahub_tools": {
@@ -920,10 +963,10 @@ async def get_architecture():
 async def get_system_health():
     """Detailed system health with all subsystem statuses."""
     return {
-        "service": settings.APP_NAME,
-        "version": settings.APP_VERSION,
+        "service": settings.app.name,
+        "version": settings.app.version,
         "uptime_seconds": round(time.time() - app_state.initialized_at, 2),
-        "mode": "mock" if settings.DATAHUB_MOCK else "live",
+        "mode": "mock" if settings.datahub.mock else "live",
         "subsystems": {
             "datahub_client": {
                 "status": "connected" if app_state.mcp._connected else "mock",
@@ -939,10 +982,10 @@ async def get_system_health():
             },
             "rate_limiter": {
                 "status": "ok",
-                "max_rpm": settings.MAX_REQUESTS_PER_MINUTE,
+                "max_rpm": int(os.getenv("MAX_RPM", "60")),
             },
             "auth": {
-                "status": "enabled" if settings.AUTH_ENABLED else "disabled",
+                "status": "enabled" if settings.auth.enabled else "disabled",
             },
         },
         "metrics": metrics.to_dict(),
@@ -950,9 +993,20 @@ async def get_system_health():
 
 
 # ─── API: Authentication ──────────────────────────────────────────────────────
-def _hash_password(password: str) -> str:
-    """Hash password with SHA-256 for demo storage. Use bcrypt in production."""
-    return hashlib.sha256(password.encode()).hexdigest()
+try:
+    import bcrypt
+    def _hash_password(password: str) -> str:
+        return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+    def _verify_password(password: str, hashed: str) -> bool:
+        return bcrypt.checkpw(password.encode(), hashed.encode())
+except ImportError:
+    import hashlib
+    def _hash_password(password: str) -> str:
+        return hashlib.sha256(password.encode()).hexdigest()
+
+    def _verify_password(password: str, hashed: str) -> bool:
+        return _hash_password(password) == hashed
 
 # In-memory user store for demo (replace with database in production)
 _DEMO_USERS: dict[str, dict] = {
@@ -976,7 +1030,7 @@ async def login(request: Request):
         return JSONResponse(status_code=400, content={"error": "email and password are required"})
 
     user = _DEMO_USERS.get(email)
-    if not user or user["password"] != _hash_password(password):
+    if not user or not _verify_password(password, user["password"]):
         return JSONResponse(status_code=401, content={"error": "Invalid credentials"})
 
     from backend.auth import create_access_token
@@ -1023,6 +1077,12 @@ async def get_me(request: Request):
     """Get current authenticated user info. Requires Bearer token when auth is enabled."""
     user = getattr(request.state, "user", None)
     if not user:
+        if not settings.auth.enabled:
+            return {
+                "email": "anonymous@meridian.ai",
+                "role": "admin",
+                "name": "Anonymous (auth disabled)",
+            }
         return JSONResponse(status_code=401, content={"error": "Not authenticated"})
     return {
         "email": user.get("sub", ""),
@@ -1059,8 +1119,8 @@ if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
         "backend.main:app",
-        host=settings.HOST,
-        port=settings.PORT,
-        log_level=settings.LOG_LEVEL.lower(),
-        reload=os.getenv("RELOAD", "false").lower() == "true",
+        host=settings.app.host,
+        port=settings.app.port,
+        log_level=settings.app.log_level.lower(),
+        reload=settings.app.reload,
     )

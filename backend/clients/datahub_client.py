@@ -174,9 +174,8 @@ class DataHubMCPClient:
         if not self.mock:
             logger.info(f"Auth mode: {self._auth_mode}")
 
-        # Attempt real connection if not forced mock
-        if not self.mock:
-            self._probe_gms()
+        # Attempt real connection if not forced mock — deferred to connect()
+        # Do NOT probe synchronously here to avoid blocking the event loop
 
     def reset_mock(self):
         """Reset all mock state to fresh copies of the original constants."""
@@ -538,40 +537,20 @@ class DataHubMCPClient:
 
     async def add_structured_properties(self, entity_urn: str, properties: dict) -> dict:
         if self._connected:
-            # Use addProperties mutation to attach key-value properties to entity.
-            # DataHub's updateStructuredProperties requires pre-defined property URNs,
-            # so we use addProperties which works with arbitrary keys.
+            # Use updateAspect to set structured properties on an entity.
+            # DataHub's GraphQL API supports setting custom aspects via updateAspect.
             mutation = """
-            mutation AddProperties($input: EntityPropertiesInput!) {
-                updateEntityProperties(input: $input)
+            mutation UpdateAspect($input: UpdateAspectInput!) {
+                updateAspect(input: $input)
             }
             """
-            # Build aspect properties list
-            aspects = []
-            for key, value in properties.items():
-                if isinstance(value, dict):
-                    for sub_key, sub_value in value.items():
-                        aspects.append({
-                            "aspectName": f"meridian_{key}_{sub_key}",
-                            "aspectType": "DATAHUB",
-                            "contentType": "JSON",
-                            "content": json.dumps({"value": str(sub_value)}),
-                        })
-                else:
-                    aspects.append({
-                        "aspectName": f"meridian_{key}",
-                        "aspectType": "DATAHUB",
-                        "contentType": "JSON",
-                        "content": json.dumps({"value": str(value)}),
-                    })
-
             result = await self._graphql_mutation(mutation, {
                 "input": {
                     "entityUrn": entity_urn,
                     "aspectName": "meridianProperties",
                     "aspectType": "DATAHUB",
                     "contentType": "JSON",
-                    "content": json.dumps({"properties": properties}),
+                    "content": json.dumps(properties),
                 }
             })
             if result:
@@ -586,23 +565,35 @@ class DataHubMCPClient:
 
     async def batch_add_tags(self, urns: list[str], tags: list[str]) -> dict:
         if self._connected:
-            # Use addTag mutation with proper tagUrn format
+            # Batch all tag additions into a single mutation to avoid N*M calls
             mutation = """
-            mutation AddTag($input: AddTagInput!) {
-                addTag(input: $input)
+            mutation BatchAddTags($input: BatchAddTagsInput!) {
+                batchAddTags(input: $input)
             }
             """
-            for urn in urns:
-                for tag in tags:
-                    tag_urn = f"urn:li:tag:{tag}"
-                    result = await self._graphql_mutation(mutation, {
-                        "input": {
-                            "resourceUrn": urn,
-                            "tagUrn": tag_urn,
-                        }
-                    })
-                    if not result:
-                        logger.warning(f"Failed to add tag '{tag}' to {urn}")
+            tag_urns = [f"urn:li:tag:{tag}" for tag in tags]
+            resource_urns = urns
+            result = await self._graphql_mutation(mutation, {
+                "input": {
+                    "resourceUrns": resource_urns,
+                    "tagUrns": tag_urns,
+                }
+            })
+            if not result:
+                # Fallback to individual calls if batch not supported
+                individual_mutation = """
+                mutation AddTag($input: AddTagInput!) {
+                    addTag(input: $input)
+                }
+                """
+                for urn in urns:
+                    for tag in tags:
+                        await self._graphql_mutation(individual_mutation, {
+                            "input": {
+                                "resourceUrn": urn,
+                                "tagUrn": f"urn:li:tag:{tag}",
+                            }
+                        })
 
         # Mock fallback
         for urn in urns:

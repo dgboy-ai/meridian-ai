@@ -75,11 +75,15 @@ class EUAIActComplianceEngine:
 
     _CHAIN_FILE = Path("data") / "audit_chain.json"
 
+    # Save chain to disk every N records to reduce I/O amplification
+    SAVE_INTERVAL = 10
+
     def __init__(self, mcp: DataHubMCPClient, groq: GroqClient, load_persisted: bool = False):
         self.mcp = mcp
         self.groq = groq
         self._audit_chain: list[AuditRecord] = []
         self._last_hash: str = "0" * 64
+        self._unsaved_count = 0
         if load_persisted:
             self._load_chain()
 
@@ -162,7 +166,10 @@ class EUAIActComplianceEngine:
 
         self._audit_chain.append(record)
         self._last_hash = record.hash_sha256
-        self._save_chain()
+        self._unsaved_count += 1
+        if self._unsaved_count >= self.SAVE_INTERVAL:
+            self._save_chain()
+            self._unsaved_count = 0
 
         return record
 

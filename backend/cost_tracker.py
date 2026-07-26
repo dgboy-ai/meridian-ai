@@ -88,19 +88,28 @@ class InvestigationCost:
         return round(self.total_cost_usd / self.time_saved_minutes, 6)
 
 
-# Token pricing (per 1K tokens) — Groq free tier estimates
+# Token pricing (per 1K tokens)
+# Sources: Groq free tier (default), OpenAI GPT-4o-mini ($0.15/$0.60), Claude Haiku ($0.25/$1.25)
+# Override via COST_INPUT_PRICE_PER_1K / COST_OUTPUT_PRICE_PER_1K env vars
+import os
+
+_input_price = float(os.getenv("COST_INPUT_PRICE_PER_1K", "0.15"))  # $/1K input tokens
+_output_price = float(os.getenv("COST_OUTPUT_PRICE_PER_1K", "0.60"))  # $/1K output tokens
+
 TOKEN_PRICING = {
-    "openai/gpt-oss-120b": {"input": 0.0, "output": 0.0},  # Free tier
-    "qwen/qwen3.6-27b": {"input": 0.0, "output": 0.0},  # Free tier
-    "qwen/qwen3-32b": {"input": 0.0, "output": 0.0},  # Free tier
-    "llama-3.3-70b-versatile": {"input": 0.0, "output": 0.0},  # Free tier
-    "llama-3.1-8b-instant": {"input": 0.0, "output": 0.0},  # Free tier
-    "default": {"input": 0.0, "output": 0.0},  # Free tier
+    "openai/gpt-oss-120b": {"input": _input_price, "output": _output_price},
+    "qwen/qwen3.6-27b": {"input": _input_price, "output": _output_price},
+    "qwen/qwen3-32b": {"input": _input_price, "output": _output_price},
+    "llama-3.3-70b-versatile": {"input": _input_price, "output": _output_price},
+    "llama-3.1-8b-instant": {"input": _input_price * 0.1, "output": _output_price * 0.1},
+    "default": {"input": _input_price, "output": _output_price},
 }
 
 
 class CostTracker:
     """Track costs per investigation and across all investigations."""
+
+    MAX_INVESTIGATIONS = 500  # Bound to prevent unbounded memory growth
 
     def __init__(self) -> None:
         self._investigations: dict[str, InvestigationCost] = {}
@@ -110,6 +119,11 @@ class CostTracker:
 
     def start_investigation(self, incident_id: str) -> InvestigationCost:
         """Start tracking costs for an investigation."""
+        # Evict oldest investigations if at capacity
+        if len(self._investigations) >= self.MAX_INVESTIGATIONS:
+            oldest_id = next(iter(self._investigations))
+            del self._investigations[oldest_id]
+
         cost = InvestigationCost(
             incident_id=incident_id,
             start_time=time.time(),

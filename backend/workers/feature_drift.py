@@ -72,10 +72,28 @@ class FeatureDrift:
                     "session_duration": [200, 250, 300, 150, 190, 270, 220, 240, 170, 290, 210, 260, 160, 250, 195],
                 }
 
+        # If no numeric fields from schema, try to derive from entity metadata
+        if not numeric_fields and not reference_distributions:
+            # Check entity for numeric properties we can use as distributions
+            for key, value in entity.items():
+                if isinstance(value, (int, float)) and key not in ("health_score", "confidence"):
+                    numeric_fields.append(key)
+                    # Use metadata values as single-point distributions for comparison
+                    reference_distributions[key] = [value]
+                    current_distributions[key] = [value]
+
         per_feature_results = {}
         for col in reference_distributions:
             ref = reference_distributions[col]
             cur = current_distributions[col]
+            # Skip features with insufficient data for meaningful drift detection
+            if len(ref) < 2 or len(cur) < 2:
+                per_feature_results[col] = {
+                    "psi": {"metric": "psi", "value": 0.0, "threshold": 0.2, "drifted": False, "detail": "Insufficient data"},
+                    "ks": {"metric": "ks", "value": 0.0, "threshold": 0.1, "drifted": False, "detail": "Insufficient data"},
+                    "combined": {"combined_score": 0.0, "psi": {}, "ks": {}, "drifted": False},
+                }
+                continue
             psi_result = population_stability_index(ref, cur)
             ks_result = ks_test(ref, cur)
             per_feature_results[col] = {

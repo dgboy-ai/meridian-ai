@@ -133,6 +133,10 @@ class TestComplianceEndpoints:
     def test_scan_pii_raw_events(self, client):
         response = client.post("/api/compliance/scan-pii", json={
             "dataset_urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,meridian.raw_events,PROD)",
+            "sample_data": [
+                {"user_id": "U001", "email": "john.doe@example.com", "ip_address": "192.168.1.100"},
+                {"user_id": "U002", "email": "jane@company.org", "phone": "+1-555-123-4567"},
+            ],
         })
         assert response.status_code == 200
         data = response.json()

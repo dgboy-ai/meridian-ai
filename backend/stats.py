@@ -13,6 +13,7 @@ Includes DSA implementations:
 """
 import bisect
 import math
+import os
 from collections import deque
 from dataclasses import dataclass, field
 
@@ -499,7 +500,7 @@ def type_mismatch_check(
 
 # Demo defaults — calibrate per deployment based on actual prediction volume and revenue
 DEFAULT_PREDICTIONS_AT_RISK = 32000  # Fallback when no model metadata available
-REVENUE_PER_PREDICTION = 1.41  # Average revenue per ML prediction (USD)
+REVENUE_PER_PREDICTION = float(os.getenv("REVENUE_PER_PREDICTION", "1.41"))  # USD per prediction
 
 
 def compute_blast_radius(

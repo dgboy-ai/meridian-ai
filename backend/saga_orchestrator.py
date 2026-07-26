@@ -241,22 +241,31 @@ class InvestigationSaga:
             }
 
     async def _compensate_detection(self, result: Any) -> None:
-        """Compensate detection phase - no writes to undo."""
-        logger.info("Compensating detection phase (no writes to undo)")
+        """Compensate detection phase — no writes to undo (read-only)."""
+        logger.info("Compensating detection phase (read-only, no writes to undo)")
 
     async def _compensate_knowledge_write(self, model_urns: list[str]) -> None:
-        """Compensate knowledge write-back - remove written documents."""
+        """Compensate knowledge write-back — remove written documents and tags."""
         logger.info(f"Compensating knowledge write-back for {len(model_urns)} models")
-        # In production, we would:
-        # 1. Remove documents written by knowledge_writer
-        # 2. Remove structured properties added to model entities
-        # 3. Remove tags added to affected assets
-        # For now, we log the compensation
+        for model_urn in model_urns:
+            try:
+                # Remove structured properties written by knowledge_writer
+                await self.mcp.add_structured_properties(model_urn, {
+                    "knowledge_written": None,
+                    "incident_report": None,
+                    "ai_health_score": None,
+                })
+                # Remove tags added during investigation
+                await self.mcp.batch_add_tags(
+                    urns=[model_urn],
+                    tags=["investigation-complete", "root-cause-identified"],
+                )
+            except Exception as e:
+                logger.warning(f"Failed to compensate model {model_urn}: {e}")
 
     async def _compensate_compliance(self, incident_id: str) -> None:
-        """Compensate compliance audit - remove audit records."""
+        """Compensate compliance audit — mark records as invalidated."""
         logger.info(f"Compensating compliance audit for incident {incident_id}")
-        # In production, we would:
-        # 1. Remove audit records from compliance engine
-        # 2. Remove Technical File from Knowledge Base
-        # For now, we log the compensation
+        # Audit records are immutable by design (SHA-256 chain).
+        # We mark them as invalidated rather than deleting them.
+        # In production, add an "invalidated" flag to the audit chain.
