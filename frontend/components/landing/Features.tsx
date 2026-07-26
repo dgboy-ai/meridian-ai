@@ -187,11 +187,16 @@ export default function Features() {
             <span style={{ marginLeft: '12px', fontSize: '12px', color: 'rgba(255, 255, 255, 0.3)' }}>Meridian AI — Investigation Dashboard</span>
           </div>
           <div style={{ padding: '32px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', letterSpacing: '0.05em' }}>
+                DEMO PREVIEW — Actual dashboard shows live data
+              </span>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '24px' }}>
               {[
-                { label: 'System Health', value: '94%', change: '+2.1%', color: '#10b981' },
+                { label: 'System Health', value: '89%', change: '+3.2%', color: '#10b981' },
                 { label: 'Avg Resolution', value: '8 min', change: '-83%', color: '#8b5cf6' },
-                { label: 'Models Monitored', value: '42', change: '100%', color: '#6366f1' },
+                { label: 'Workers Active', value: '18', change: '100%', color: '#6366f1' },
                 { label: 'Incidents Today', value: '3', change: '-67%', color: '#f43f5e' },
               ].map((stat, i) => (
                 <motion.div key={i} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 + i * 0.08 }}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
+import { apiUrl } from '../../lib/config'
 import FloatingCubes from './FloatingCubes'
 import MeridianGlobe from './MeridianGlobe'
 import CompassRose from './CompassRose'
@@ -66,14 +67,33 @@ function TypewriterText() {
   )
 }
 
+// Fetch real stats from backend
+function useRealStats() {
+  const [stats, setStats] = useState({ workers: 18, tools: 15, avgResolution: 8 })
+  useEffect(() => {
+    fetch(apiUrl('/api/system/architecture'))
+      .then(r => r.json())
+      .then(data => {
+        setStats({
+          workers: data.stats?.total_workers || 18,
+          tools: data.stats?.datahub_capabilities || 15,
+          avgResolution: 8,
+        })
+      })
+      .catch(() => {})
+  }, [])
+  return stats
+}
+
 export default function Hero() {
   const ref = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] })
   const y = useTransform(scrollYProgress, [0, 1], [0, 120])
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0])
   const scale = useTransform(scrollYProgress, [0, 0.5], [1, 0.96])
-  const workers = useCountUp(18, 1500, 1200)
-  const tools = useCountUp(15, 1500, 1400)
+  const stats = useRealStats()
+  const workers = useCountUp(stats.workers, 1500, 1200)
+  const tools = useCountUp(stats.tools, 1500, 1400)
 
   return (
     <section ref={ref} id="hero" style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', padding: '100px 32px 60px' }}>
@@ -116,7 +136,7 @@ export default function Hero() {
                 <h1 style={{ fontSize: 'clamp(38px, 4.8vw, 68px)', fontWeight: 900, lineHeight: 1.05, letterSpacing: '-0.04em', margin: 0, color: '#fff' }}>
                   before they cost{' '}
                   <span style={{ background: 'linear-gradient(135deg, #f43f5e, #ec4899 25%, #a855f7 50%, #6366f1 75%, #06b6d4)', backgroundSize: '200% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', animation: 'gradient-flow 3s linear infinite' }}>
-                    $45K/day
+                    thousands/day
                   </span>
                 </h1>
               </motion.div>

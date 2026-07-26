@@ -3,12 +3,12 @@
 import { motion } from 'framer-motion'
 
 const logos = [
-  { name: 'DataHub', icon: '◆' },
-  { name: 'MLflow', icon: '▲' },
-  { name: 'Airflow', icon: '◎' },
-  { name: 'Snowflake', icon: '⬡' },
-  { name: 'Feast', icon: '◇' },
-  { name: 'dbt', icon: '▢' },
+  { name: 'DataHub', icon: '◆', real: true },
+  { name: 'MLflow', icon: '▲', real: false },
+  { name: 'Airflow', icon: '◎', real: false },
+  { name: 'Snowflake', icon: '⬡', real: false },
+  { name: 'Feast', icon: '◇', real: false },
+  { name: 'dbt', icon: '▢', real: false },
 ]
 
 export default function SocialProof() {
@@ -21,14 +21,19 @@ export default function SocialProof() {
       <div style={{ maxWidth: '1000px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
         <motion.p initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
           style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '36px' }}>
-          Integrated with the modern data stack
+          Native DataHub integration with the modern data stack
         </motion.p>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '48px', flexWrap: 'wrap' }}>
           {logos.map((logo, i) => (
             <motion.div key={logo.name} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} whileHover={{ scale: 1.12, y: -3 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5 }}
-              style={{ display: 'flex', alignItems: 'center', gap: '10px', opacity: 0.6, cursor: 'default' }}>
-              <span style={{ fontSize: '20px', color: '#8b5cf6' }}>{logo.icon}</span>
-              <span style={{ fontSize: '15px', fontWeight: 600, color: 'rgba(255,255,255,0.8)', letterSpacing: '-0.01em' }}>{logo.name}</span>
+              style={{ display: 'flex', alignItems: 'center', gap: '10px', opacity: logo.real ? 0.9 : 0.35, cursor: 'default' }}>
+              <span style={{ fontSize: '20px', color: logo.real ? '#8b5cf6' : 'rgba(255,255,255,0.4)' }}>{logo.icon}</span>
+              <span style={{ fontSize: '15px', fontWeight: 600, color: logo.real ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)', letterSpacing: '-0.01em' }}>{logo.name}</span>
+              {logo.real && (
+                <span style={{ fontSize: '9px', fontWeight: 700, color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(16,185,129,0.2)' }}>
+                  NATIVE
+                </span>
+              )}
             </motion.div>
           ))}
         </div>
