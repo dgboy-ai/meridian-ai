@@ -63,12 +63,12 @@ export default function CTA() {
               margin: '0 auto 32px',
               lineHeight: 1.6,
             }}>
-              Deploy Meridian AI in 5 minutes. No DataHub required for mock mode. Open source under Apache 2.0.
+              Deploy Meridian AI in minutes. No DataHub required for demo mode. Open source under Apache 2.0.
             </p>
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
               <a
-                href="/incidents/42"
+                href="/auth/register"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',

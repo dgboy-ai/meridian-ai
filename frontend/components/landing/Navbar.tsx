@@ -29,6 +29,7 @@ export default function Navbar() {
     { label: 'Models', href: '/models', icon: '◇' },
     { label: 'Playbooks', href: '/playbooks', icon: '◈' },
     { label: 'Compliance', href: '/compliance', icon: '◆' },
+    { label: 'Login', href: '/auth/login', icon: '→' },
   ]
 
   const isActive = (href: string) => {
@@ -245,9 +246,9 @@ export default function Navbar() {
           </div>
 
           {/* CTA */}
-          <div className="nav-desktop">
+          <div className="nav-desktop" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <motion.a
-              href="/dashboard"
+              href="/auth/register"
               whileHover={{ scale: 1.03, y: -1 }}
               whileTap={{ scale: 0.97 }}
               style={{
