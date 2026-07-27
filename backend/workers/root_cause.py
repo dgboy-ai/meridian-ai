@@ -24,9 +24,9 @@ from backend.stats import compute_blast_radius, traverse_column_lineage, travers
 class RootCause:
     # Entity type priority for root cause scoring (higher = more likely root cause)
     ENTITY_TYPE_WEIGHTS: ClassVar[dict[str, float]] = {
-        "mlModel": 3.0,
+        "dataset": 3.0,
         "featureStore": 2.5,
-        "dataset": 1.0,
+        "mlModel": 1.0,
     }
 
     def __init__(self, mcp: DataHubMCPClient, groq: GroqClient):
@@ -44,8 +44,8 @@ class RootCause:
         """Score an entity as a potential root cause.
 
         Factors:
-          - Entity type weight: model > feature_store > dataset
-          - Downstream impact: number of downstream entities this entity feeds
+          - Entity type weight: dataset > feature_store > model
+          - Downstream impact: upstream entities score higher
           - Schema changes: number of columns that changed in this entity
         Returns a float score (higher = more likely root cause).
         """
@@ -53,16 +53,11 @@ class RootCause:
         entity_type = entity.get("type", "dataset")
         type_weight = self.ENTITY_TYPE_WEIGHTS.get(entity_type, 1.0)
 
-        # 2. Downstream impact: count entities that have this candidate as upstream
-        # Higher impact = more entities further downstream from this candidate
-        downstream_impact = 0
-        for d_urn in downstream_urns:
-            if d_urn == candidate_urn:
-                continue
-            # Every entity in the downstream list that isn't the candidate
-            # is potentially impacted by the candidate
-            downstream_impact += 1
-        # Normalize impact: upstream entities score higher for blast radius
+        # 2. Downstream impact: 
+        # Upstream entities (like the source) will have more entities downstream of them.
+        # Since we don't have full graph traversal here, we can approximate:
+        # if the candidate is the source (not in downstream_urns), it affects everyone.
+        downstream_impact = len(downstream_urns) if candidate_urn not in downstream_urns else 0
         downstream_score = downstream_impact * 0.5
 
         # 3. Schema changes: count changed columns that belong to this entity

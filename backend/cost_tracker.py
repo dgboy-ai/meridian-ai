@@ -79,7 +79,7 @@ class InvestigationCost:
         if self.total_cost_usd <= 0:
             return 0.0
         ENGINEER_COST_PER_MINUTE = 1.25
-        value_of_time_saved = self.time_saved_minutes * ENGINEER_COST_PER_MINUTE
+        value_of_time_saved = (self.time_saved_minutes * ENGINEER_COST_PER_MINUTE) + (self.incidents_prevented * self.revenue_at_risk)
         if value_of_time_saved <= 0:
             return 0.0
         return round(((value_of_time_saved - self.total_cost_usd) / self.total_cost_usd) * 100, 2)
@@ -221,13 +221,17 @@ class CostTracker:
         # Estimate ROI based on time saved
         # Average ML engineer salary: $150K/year = $75/hour = $1.25/minute
         cost_per_minute = 1.25
-        value_of_time_saved = summary["total_time_saved_minutes"] * cost_per_minute
+        
+        total_revenue_saved = sum(inv.incidents_prevented * inv.revenue_at_risk for inv in self._investigations.values())
+        value_of_time_saved = (summary["total_time_saved_minutes"] * cost_per_minute) + total_revenue_saved
+        
         roi = 0.0
         if summary["total_cost_usd"] > 0:
             roi = ((value_of_time_saved - summary["total_cost_usd"]) / summary["total_cost_usd"]) * 100
 
         return {
             **summary,
+            "total_revenue_saved_usd": total_revenue_saved,
             "value_of_time_saved_usd": round(value_of_time_saved, 2),
             "roi_percentage": round(roi, 2),
             "cost_per_minute_saved": round(

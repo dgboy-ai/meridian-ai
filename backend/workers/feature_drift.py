@@ -97,7 +97,7 @@ class FeatureDrift:
             psi_result = population_stability_index(ref, cur)
             ks_result = ks_test(ref, cur)
             combined = feature_drift_score(ref, cur)
-        per_feature_results[col] = {
+            per_feature_results[col] = {
                 "psi": psi_result.to_dict(),
                 "ks": ks_result.to_dict(),
                 "combined_score": combined["combined_score"],

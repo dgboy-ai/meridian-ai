@@ -12,15 +12,18 @@ jest.mock('next/navigation', () => ({
 }))
 
 jest.mock('framer-motion', () => {
-  const mkEl = (tag) => (props) => React.createElement(tag, props, props?.children)
+  const mkEl = (tag) => ({ initial, animate, exit, transition, whileHover, whileTap, layout, layoutId, ...props }) => React.createElement(tag, props, props?.children)
   return {
     motion: {
       div: mkEl('div'),
+      header: mkEl('header'),
+      nav: mkEl('nav'),
+      main: mkEl('main'),
       span: mkEl('span'),
       aside: mkEl('aside'),
       button: mkEl('button'),
     },
-    AnimatePresence: ({ children }) => React.createElement(React.Fragment, null, children),
+    AnimatePresence: ({ children }) => children,
   }
 })
 

@@ -9,7 +9,7 @@ import logging
 import os
 import random
 
-from groq import Groq, RateLimitError
+from groq import AsyncGroq, RateLimitError
 
 from backend.resilience import CircuitBreaker
 
@@ -29,7 +29,7 @@ class GroqClient:
             self.mock = not bool(self.api_key)
         else:
             self.mock = mock
-        self.client = Groq(api_key=self.api_key) if (self.api_key and not self.mock) else None
+        self.client = AsyncGroq(api_key=self.api_key) if (self.api_key and not self.mock) else None
         self._circuit_breaker = CircuitBreaker(failure_threshold=3, recovery_timeout=30.0)
         self._total_calls = 0
         self._total_tokens = 0
@@ -44,7 +44,7 @@ class GroqClient:
             return MODELS[model]
         return [model]
 
-    def complete(
+    async def async_complete(
         self,
         messages: list[dict],
         model: str = "openai/gpt-oss-120b",
@@ -63,7 +63,7 @@ class GroqClient:
         for model_name in models_to_try:
             for attempt in range(max_retries):
                 try:
-                    response = self.client.chat.completions.create(
+                    response = await self.client.chat.completions.create(
                         model=model_name,
                         messages=messages,
                         temperature=temperature,
@@ -88,38 +88,12 @@ class GroqClient:
         logger.warning("All Groq models failed, using mock response")
         return self._mock_response(messages)
 
-    async def async_complete(
-        self,
-        messages: list[dict],
-        model: str = "openai/gpt-oss-120b",
-        temperature: float = 0,
-        max_retries: int = 2,
-    ) -> str:
-        """Async wrapper around complete() that doesn't block the event loop."""
-        import asyncio
-        return await asyncio.to_thread(
-            self.complete,
-            messages,
-            model=model,
-            temperature=temperature,
-            max_retries=max_retries,
-        )
-
     async def async_complete_json(
         self,
         messages: list[dict],
         model: str = "openai/gpt-oss-120b",
     ) -> dict:
-        """Async wrapper around complete_json()."""
-        import asyncio
-        return await asyncio.to_thread(self.complete_json, messages, model=model)
-
-    def complete_json(
-        self,
-        messages: list[dict],
-        model: str = "openai/gpt-oss-120b",
-    ) -> dict:
-        text = self.complete(messages, model=model)
+        text = await self.async_complete(messages, model=model)
         text = text.strip()
 
         if "```" in text:

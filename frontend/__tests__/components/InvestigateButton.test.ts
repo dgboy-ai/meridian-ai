@@ -7,13 +7,13 @@ const mockFetch = jest.fn()
 global.fetch = mockFetch
 
 jest.mock('framer-motion', () => {
-  const mkEl = (tag) => (props) => React.createElement(tag, props, props?.children)
+  const mkEl = (tag) => ({ initial, animate, exit, transition, whileHover, whileTap, layout, layoutId, ...props }) => React.createElement(tag, props, props?.children)
   return {
     motion: {
-      div: mkEl('div'),
       button: mkEl('button'),
+      div: mkEl('div'),
     },
-    AnimatePresence: ({ children }) => React.createElement(React.Fragment, null, children),
+    AnimatePresence: ({ children }) => children,
   }
 })
 

@@ -6,8 +6,7 @@ const nextConfig = {
   },
   // rewrites proxy API calls to backend when BACKEND_URL is set
   async rewrites() {
-    const backendUrl = process.env.BACKEND_URL
-    if (!backendUrl) return []
+    const backendUrl = process.env.BACKEND_URL || 'https://meridian-ai-backend.onrender.com'
     return [
       {
         source: '/api/:path*',
