@@ -11,6 +11,7 @@ This module tracks:
   - ROI calculation: "Investigation cost $0.03. Prevented $45,000/day loss."
 """
 import logging
+import os
 import time
 from dataclasses import dataclass, field
 
@@ -73,7 +74,7 @@ class InvestigationCost:
 
     def calculate_roi(self) -> float:
         """Calculate ROI as percentage.
-        
+
         Uses engineer cost per minute ($1.25 = $75/hr) to value time saved.
         """
         if self.total_cost_usd <= 0:
@@ -93,8 +94,6 @@ class InvestigationCost:
 
 # Token pricing (per 1K tokens)
 # Override via COST_INPUT_PRICE_PER_1K / COST_OUTPUT_PRICE_PER_1K env vars
-import os
-
 _input_price = float(os.getenv("COST_INPUT_PRICE_PER_1K", "0.00059"))
 _output_price = float(os.getenv("COST_OUTPUT_PRICE_PER_1K", "0.00079"))
 
@@ -221,10 +220,10 @@ class CostTracker:
         # Estimate ROI based on time saved
         # Average ML engineer salary: $150K/year = $75/hour = $1.25/minute
         cost_per_minute = 1.25
-        
+
         total_revenue_saved = sum(inv.incidents_prevented * inv.revenue_at_risk for inv in self._investigations.values())
         value_of_time_saved = (summary["total_time_saved_minutes"] * cost_per_minute) + total_revenue_saved
-        
+
         roi = 0.0
         if summary["total_cost_usd"] > 0:
             roi = ((value_of_time_saved - summary["total_cost_usd"]) / summary["total_cost_usd"]) * 100

@@ -139,7 +139,6 @@ class RequestMetricsMiddleware(BaseHTTPMiddleware):
             # For chunked encoding: wrap body to enforce size limit during read
             if not content_length:
                 original_receive = request._receive
-                body_chunks: list[bytes] = []
                 total_size = 0
                 exceeded = False
 

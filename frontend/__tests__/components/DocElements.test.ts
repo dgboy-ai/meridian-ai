@@ -4,7 +4,7 @@ import React from 'react'
 import { DocH1, DocH2, DocH3, DocP, DocBadge, DocCode, DocCard, DocInfo, DocTable, DocDivider } from '../../components/docs/DocElements'
 
 jest.mock('framer-motion', () => {
-  const mkEl = (tag) => ({ initial, animate, exit, transition, whileHover, whileTap, whileInView, viewport, layout, layoutId, ...props }) => React.createElement(tag, props, props?.children)
+  const mkEl = (tag: string) => ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => React.createElement(tag, props, children)
   return {
     motion: {
       h1: mkEl('h1'),

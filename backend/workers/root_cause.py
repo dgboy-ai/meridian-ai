@@ -53,7 +53,7 @@ class RootCause:
         entity_type = entity.get("type", "dataset")
         type_weight = self.ENTITY_TYPE_WEIGHTS.get(entity_type, 1.0)
 
-        # 2. Downstream impact: 
+        # 2. Downstream impact:
         # Upstream entities (like the source) will have more entities downstream of them.
         # Since we don't have full graph traversal here, we can approximate:
         # if the candidate is the source (not in downstream_urns), it affects everyone.

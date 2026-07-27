@@ -73,7 +73,7 @@ export function DocP({ children }: { children: React.ReactNode }) {
   )
 }
 
-export function DocBadge({ color = '#8b5cf6', children }: { color?: string; children: React.ReactNode }) {
+export function DocBadge({ color = '#8b5cf6', children }: { color?: string; children?: React.ReactNode }) {
   return (
     <span style={{
       display: 'inline-block',
@@ -91,7 +91,7 @@ export function DocBadge({ color = '#8b5cf6', children }: { color?: string; chil
   )
 }
 
-export function DocCode({ children, inline }: { children: React.ReactNode; inline?: boolean }) {
+export function DocCode({ children, inline }: { children?: React.ReactNode; inline?: boolean }) {
   if (inline) {
     return (
       <code style={{
@@ -128,7 +128,7 @@ export function DocCard({ title, icon, color = '#8b5cf6', children }: {
   title: string
   icon: string
   color?: string
-  children: React.ReactNode
+  children?: React.ReactNode
 }) {
   return (
     <motion.div
@@ -164,7 +164,7 @@ export function DocCard({ title, icon, color = '#8b5cf6', children }: {
   )
 }
 
-export function DocInfo({ type = 'info', children }: { type?: 'info' | 'warning' | 'tip'; children: React.ReactNode }) {
+export function DocInfo({ type = 'info', children }: { type?: 'info' | 'warning' | 'tip'; children?: React.ReactNode }) {
   const colors = {
     info: { bg: 'rgba(99, 102, 241, 0.08)', border: 'rgba(99, 102, 241, 0.2)', icon: '◈', label: 'Info' },
     warning: { bg: 'rgba(245, 158, 11, 0.08)', border: 'rgba(245, 158, 11, 0.2)', icon: '⚠', label: 'Warning' },

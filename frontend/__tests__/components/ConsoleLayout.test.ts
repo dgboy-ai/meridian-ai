@@ -12,7 +12,7 @@ jest.mock('next/navigation', () => ({
 }))
 
 jest.mock('framer-motion', () => {
-  const mkEl = (tag) => ({ initial, animate, exit, transition, whileHover, whileTap, layout, layoutId, ...props }) => React.createElement(tag, props, props?.children)
+  const mkEl = (tag: string) => ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => React.createElement(tag, props, children)
   return {
     motion: {
       div: mkEl('div'),
@@ -23,7 +23,7 @@ jest.mock('framer-motion', () => {
       aside: mkEl('aside'),
       button: mkEl('button'),
     },
-    AnimatePresence: ({ children }) => children,
+    AnimatePresence: ({ children }: { children?: React.ReactNode }) => React.createElement('div', null, children),
   }
 })
 
