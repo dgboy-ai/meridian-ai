@@ -7,8 +7,7 @@ import { apiUrl } from '../../../lib/config'
 import InvestigateButton from '../../../components/InvestigateButton'
 import LineageGraph3D from '../../../components/LineageGraph3D'
 
-// Use relative URLs - Next.js rewrites proxy to backend
-const API = ''
+
 
 interface TimelineEvent {
   time: string
@@ -116,7 +115,7 @@ export default function IncidentPage() {
     retryCountRef.current = 0
 
     const connect = () => {
-      const es = new EventSource(`${API}/stream/investigate?incident_id=${params.id}&mode=live`)
+      const es = new EventSource(apiUrl(`/stream/investigate?incident_id=${params.id}&mode=live`))
       eventSourceRef.current = es
 
       es.onmessage = (event) => {
@@ -125,7 +124,7 @@ export default function IncidentPage() {
           setIsStreaming(false)
           retryCountRef.current = 0
           // Refetch incident to get final state
-          fetch(`${API}/api/incidents/${params.id}`)
+    fetch(apiUrl(`/api/incidents/${params.id}`))
             .then(r => r.json())
             .then(data => setIncident(data))
           return
@@ -170,7 +169,7 @@ export default function IncidentPage() {
     retryCountRef.current = 0
 
     const connect = () => {
-      const es = new EventSource(`${API}/stream/replay?incident_id=${params.id}&delay=0.6`)
+      const es = new EventSource(apiUrl(`/stream/replay?incident_id=${params.id}&delay=0.6`))
       eventSourceRef.current = es
 
       es.onmessage = (event) => {

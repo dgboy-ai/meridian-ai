@@ -44,14 +44,14 @@ export default function CompliancePage() {
 
   useEffect(() => {
     // Load latest incident's compliance data dynamically
-    fetch('/api/incidents')
+    fetch(apiUrl('/api/incidents'))
       .then(r => r.json())
       .then(async (data) => {
         const incidents = data.incidents || []
         const latestId = incidents.length > 0 ? incidents[0].id : '42'
         const [trail, file] = await Promise.all([
-          fetch('/api/compliance/audit-trail').then(r => r.json()),
-          fetch(`/api/compliance/eu-ai-act/${latestId}`).then(r => r.json()),
+          fetch(apiUrl('/api/compliance/audit-trail')).then(r => r.json()),
+          fetch(apiUrl(`/api/compliance/eu-ai-act/${latestId}`)).then(r => r.json()),
         ])
         setAuditTrail(trail)
         setRecords(file.audit_records || [])
@@ -63,7 +63,7 @@ export default function CompliancePage() {
   const runPiiScan = async () => {
     setScanning(true)
     try {
-      const res = await fetch('/api/compliance/scan-pii', {
+      const res = await fetch(apiUrl('/api/compliance/scan-pii'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dataset_urn: 'urn:li:dataset:(urn:li:dataPlatform:snowflake,meridian.raw_events,PROD)' }),

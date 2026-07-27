@@ -101,7 +101,7 @@ Include: detection signals, fastest investigation path, resolution steps.
 Make it concise and actionable."""},
         ]
 
-        response = self.groq.complete(messages, model="reasoning")
+        response = await self.groq.async_complete(messages, model="reasoning")
         new_playbook = response if response else self._generate_default_playbook(pattern_id, root_cause, resolution)
 
         # 3. Calculate improvement — extract prior time from playbook content

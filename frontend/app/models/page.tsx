@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { apiUrl } from '../../lib/config'
 
-const API = ''
-
 interface ModelHealth {
   urn: string
   name: string

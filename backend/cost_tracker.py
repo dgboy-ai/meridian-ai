@@ -72,11 +72,14 @@ class InvestigationCost:
         }
 
     def calculate_roi(self) -> float:
-        """Calculate ROI as percentage."""
+        """Calculate ROI as percentage.
+        
+        Uses engineer cost per minute ($1.25 = $75/hr) to value time saved.
+        """
         if self.total_cost_usd <= 0:
             return 0.0
-        from backend.stats import REVENUE_PER_PREDICTION
-        value_of_time_saved = self.time_saved_minutes * REVENUE_PER_PREDICTION
+        ENGINEER_COST_PER_MINUTE = 1.25
+        value_of_time_saved = self.time_saved_minutes * ENGINEER_COST_PER_MINUTE
         if value_of_time_saved <= 0:
             return 0.0
         return round(((value_of_time_saved - self.total_cost_usd) / self.total_cost_usd) * 100, 2)
@@ -89,17 +92,16 @@ class InvestigationCost:
 
 
 # Token pricing (per 1K tokens)
-# Sources: Groq free tier (default), OpenAI GPT-4o-mini ($0.15/$0.60), Claude Haiku ($0.25/$1.25)
 # Override via COST_INPUT_PRICE_PER_1K / COST_OUTPUT_PRICE_PER_1K env vars
 import os
 
-_input_price = float(os.getenv("COST_INPUT_PRICE_PER_1K", "0.15"))  # $/1K input tokens
-_output_price = float(os.getenv("COST_OUTPUT_PRICE_PER_1K", "0.60"))  # $/1K output tokens
+_input_price = float(os.getenv("COST_INPUT_PRICE_PER_1K", "0.00059"))
+_output_price = float(os.getenv("COST_OUTPUT_PRICE_PER_1K", "0.00079"))
 
 TOKEN_PRICING = {
     "openai/gpt-oss-120b": {"input": _input_price, "output": _output_price},
-    "qwen/qwen3.6-27b": {"input": _input_price, "output": _output_price},
-    "qwen/qwen3-32b": {"input": _input_price, "output": _output_price},
+    "qwen/qwen3.6-27b": {"input": float(os.getenv("COST_INPUT_PRICE_PER_1K", "0.00010")), "output": float(os.getenv("COST_OUTPUT_PRICE_PER_1K", "0.00040"))},
+    "qwen/qwen3-32b": {"input": float(os.getenv("COST_INPUT_PRICE_PER_1K", "0.00010")), "output": float(os.getenv("COST_OUTPUT_PRICE_PER_1K", "0.00040"))},
     "llama-3.3-70b-versatile": {"input": _input_price, "output": _output_price},
     "llama-3.1-8b-instant": {"input": _input_price * 0.1, "output": _output_price * 0.1},
     "default": {"input": _input_price, "output": _output_price},

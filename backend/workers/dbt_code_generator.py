@@ -69,7 +69,7 @@ class DbtCodeGenerator:
             },
         ]
 
-        response = self.groq.complete_json(messages, model="reasoning")
+        response = await self.groq.async_complete_json(messages, model="reasoning")
         dbt_sql = response.get("dbt_sql", self._default_sql(source_name, target_model_name, source_fields))
         schema_yaml = response.get("schema_yaml", self._default_yaml(target_model_name, source_fields))
 

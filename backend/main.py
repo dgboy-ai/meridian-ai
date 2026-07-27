@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from backend.actions.listener import ActionsListener
-from backend.auth import JWTAuthMiddleware
+from backend.auth import JWTAuthMiddleware, create_access_token
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient
 from backend.config import settings
@@ -499,50 +499,44 @@ async def get_action_stats():
 SSE_HEARTBEAT_INTERVAL = 15  # seconds — keeps proxies/browsers alive
 
 
-async def _sse_heartbeat(stop_event: asyncio.Event) -> AsyncIterator[str]:
-    """Yield SSE keepalive comments every SSE_HEARTBEAT_INTERVAL seconds until stopped."""
-    while not stop_event.is_set():
-        await asyncio.sleep(SSE_HEARTBEAT_INTERVAL)
-        if not stop_event.is_set():
-            yield ": heartbeat\n\n"
-
-
 async def _merge_with_heartbeat(event_gen: AsyncIterator[str]) -> AsyncIterator[str]:
     """Merge an event generator with periodic heartbeat comments.
 
     The heartbeat ensures long-running streams (investigations take 30s+) don't get
     killed by nginx/cloud load balancer proxy timeouts (typically 60s).
     """
+    hb_task: asyncio.Task | None = None
     stop = asyncio.Event()
-    hb = _sse_heartbeat(stop)
-    hb_task = None
 
-    async def _forward_hb():
-        async for h in hb:
-            yield h
+    async def _heartbeat_loop():
+        while not stop.is_set():
+            await asyncio.sleep(SSE_HEARTBEAT_INTERVAL)
+            if not stop.is_set():
+                yield ": heartbeat\n\n"
+
+    async def _run_heartbeat():
+        async for h in _heartbeat_loop():
+            return h
+        return ""
 
     try:
-        hb_task = asyncio.create_task(_forward_hb().__anext__())
-
+        hb_task = asyncio.create_task(_run_heartbeat())
         async for event in event_gen:
             yield event
-            # After yielding a real event, check if heartbeat fired
             if hb_task.done():
                 try:
                     yield hb_task.result()
-                except StopAsyncIteration:
+                except (StopAsyncIteration, Exception):
                     pass
-                hb_task = asyncio.create_task(_forward_hb().__anext__())
-
-        # Drain remaining heartbeats briefly
+                hb_task = asyncio.create_task(_run_heartbeat())
+    finally:
         stop.set()
         if hb_task and not hb_task.done():
             hb_task.cancel()
-    except Exception:
-        stop.set()
-        if hb_task and not hb_task.done():
-            hb_task.cancel()
-        raise
+            try:
+                await hb_task
+            except (asyncio.CancelledError, StopAsyncIteration):
+                pass
 
 
 # ─── Streaming: Replay ────────────────────────────────────────────────────────
@@ -1033,7 +1027,6 @@ async def login(request: Request):
     if not user or not _verify_password(password, user["password"]):
         return JSONResponse(status_code=401, content={"error": "Invalid credentials"})
 
-    from backend.auth import create_access_token
     token = create_access_token({"sub": email, "role": user["role"], "name": user["name"]})
     return {
         "access_token": token,
@@ -1063,7 +1056,6 @@ async def register(request: Request):
 
     _DEMO_USERS[email] = {"password": _hash_password(password), "role": "viewer", "name": name}
 
-    from backend.auth import create_access_token
     token = create_access_token({"sub": email, "role": "viewer", "name": name})
     return {
         "access_token": token,

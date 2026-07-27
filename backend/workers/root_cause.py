@@ -53,16 +53,16 @@ class RootCause:
         entity_type = entity.get("type", "dataset")
         type_weight = self.ENTITY_TYPE_WEIGHTS.get(entity_type, 1.0)
 
-        # 2. Downstream impact: count entities that list this urn as upstream
+        # 2. Downstream impact: count entities that have this candidate as upstream
+        # Higher impact = more entities further downstream from this candidate
         downstream_impact = 0
-        for d_urn in all_entities:
+        for d_urn in downstream_urns:
             if d_urn == candidate_urn:
                 continue
-            # Check if candidate_urn appears in downstream entity's lineage
-            # We approximate by checking if candidate is in the downstream list
-            if d_urn in downstream_urns:
-                downstream_impact += 1
-        # If this entity itself is in the downstream list, it has downstream consumers
+            # Every entity in the downstream list that isn't the candidate
+            # is potentially impacted by the candidate
+            downstream_impact += 1
+        # Normalize impact: upstream entities score higher for blast radius
         downstream_score = downstream_impact * 0.5
 
         # 3. Schema changes: count changed columns that belong to this entity

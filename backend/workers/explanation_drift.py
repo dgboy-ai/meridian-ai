@@ -6,6 +6,7 @@ it indicates concept drift even if accuracy hasn't dropped yet.
 Real computation: compares feature importance distributions between
 training baseline and current serving explanations.
 """
+import random
 from datetime import UTC, datetime
 
 from backend.clients.datahub_client import DataHubMCPClient
@@ -42,7 +43,6 @@ class ExplanationDrift:
         if not current_importance:
             # Derive from reference by applying a drift simulation
             # In production, this would come from live explanation tracking
-            import random
             random.seed(42)
             current_importance = {}
             for feat, ref_val in reference_importance.items():

@@ -3,6 +3,7 @@
 Uses schema type mismatch detection + real distribution comparison.
 No LLM guessing.
 """
+import random
 from datetime import UTC, datetime
 
 from backend.clients.datahub_client import DataHubMCPClient
@@ -56,7 +57,6 @@ class TrainingServingSkewDetective:
             # Derive from feature table schema - use numeric fields
             numeric_fields = [f for f in feature_fields if f.get("type", "") in ("INT", "FLOAT", "DOUBLE", "BIGINT")]
             if numeric_fields and not reference_distributions:
-                import random
                 random.seed(42)  # Deterministic for reproducibility
                 reference_distributions = {}
                 current_distributions = {}

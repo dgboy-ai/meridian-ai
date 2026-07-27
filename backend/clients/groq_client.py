@@ -88,6 +88,32 @@ class GroqClient:
         logger.warning("All Groq models failed, using mock response")
         return self._mock_response(messages)
 
+    async def async_complete(
+        self,
+        messages: list[dict],
+        model: str = "openai/gpt-oss-120b",
+        temperature: float = 0,
+        max_retries: int = 2,
+    ) -> str:
+        """Async wrapper around complete() that doesn't block the event loop."""
+        import asyncio
+        return await asyncio.to_thread(
+            self.complete,
+            messages,
+            model=model,
+            temperature=temperature,
+            max_retries=max_retries,
+        )
+
+    async def async_complete_json(
+        self,
+        messages: list[dict],
+        model: str = "openai/gpt-oss-120b",
+    ) -> dict:
+        """Async wrapper around complete_json()."""
+        import asyncio
+        return await asyncio.to_thread(self.complete_json, messages, model=model)
+
     def complete_json(
         self,
         messages: list[dict],

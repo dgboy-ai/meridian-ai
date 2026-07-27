@@ -15,10 +15,16 @@ Examples:
     meridian serve --port 8000
 """
 import asyncio
+import io
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Handle Windows console encoding for Unicode characters
+if sys.platform == "win32":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 from backend.clients.datahub_client import DataHubMCPClient
 from backend.clients.groq_client import GroqClient

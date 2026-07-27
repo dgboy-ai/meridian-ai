@@ -96,10 +96,12 @@ class FeatureDrift:
                 continue
             psi_result = population_stability_index(ref, cur)
             ks_result = ks_test(ref, cur)
-            per_feature_results[col] = {
+            combined = feature_drift_score(ref, cur)
+        per_feature_results[col] = {
                 "psi": psi_result.to_dict(),
                 "ks": ks_result.to_dict(),
-                "combined": feature_drift_score(ref, cur),
+                "combined_score": combined["combined_score"],
+                "drifted": combined["drifted"],
             }
 
         # ── COMPUTATION 3: Drift velocity ──────────────────────────────
@@ -111,18 +113,18 @@ class FeatureDrift:
             drift_velocities[col] = round(psi_val / 10, 6)  # Per-sample drift rate
 
         # ── COMPUTATION 4: Overall drift score ─────────────────────────
-        scores = [r["combined"]["combined_score"] for r in per_feature_results.values()]
+        scores = [r["combined_score"] for r in per_feature_results.values()]
         overall_score = sum(scores) / max(len(scores), 1)
         if type_check["count"] > 0:
             overall_score = min(1.0, overall_score + 0.3 * type_check["count"])
 
-        affected_features = [col for col, r in per_feature_results.items() if r["combined"]["drifted"]]
+        affected_features = [col for col, r in per_feature_results.items() if r["drifted"]]
         affected_features += [m["column"] for m in type_check["mismatches"]]
 
         # ── BUILD FINDING ──────────────────────────────────────────────
         if type_check["count"] > 0 or affected_features:
             mismatch_strs = [f"{m['column']}: {m['reference_type']}→{m['current_type']}" for m in type_check['mismatches']]
-            drift_strs = [f"{col}=PSI:{r['psi']['value']:.4f}/KS:{r['ks']['value']:.4f}" for col, r in per_feature_results.items() if r['combined']['drifted']]
+            drift_strs = [f"{col}=PSI:{r['psi']['value']:.4f}/KS:{r['ks']['value']:.4f}" for col, r in per_feature_results.items() if r['drifted']]
             finding = (
                 f"FEATURE DRIFT: {len(affected_features)} features affected. "
                 f"Type mismatches: {', '.join(mismatch_strs)}. "

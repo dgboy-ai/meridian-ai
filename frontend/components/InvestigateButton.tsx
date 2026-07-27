@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { apiUrl } from '../lib/config'
 
 const DATASETS = [
   {
@@ -38,7 +39,7 @@ export default function InvestigateButton({ onInvestigationStarted }: Props) {
     setIsStarting(true)
     setError('')
     try {
-      const res = await fetch('/api/investigate', {
+      const res = await fetch(apiUrl('/api/investigate'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dataset_urn: selectedUrn }),
