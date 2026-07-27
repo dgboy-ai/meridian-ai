@@ -91,7 +91,7 @@ export default function IncidentPage() {
   const MAX_RETRIES = 3
 
   useEffect(() => {
-    fetch(`${API}/api/incidents/${params.id}`)
+    fetch(apiUrl(`/api/incidents/${params.id}`))
       .then(r => r.json())
       .then(data => {
         setIncident(data)
